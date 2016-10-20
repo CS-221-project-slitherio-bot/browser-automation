@@ -2,18 +2,18 @@ from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from time import sleep
 
-capabilities = DesiredCapabilities.CHROME
-capabilities['loggingPrefs'] = { 'browser':'ALL' }
-
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60
 
-driver = webdriver.Chrome(desired_capabilities=capabilities)
-
-# capabilities = DesiredCapabilities.PHANTOMJS
+# capabilities = DesiredCapabilities.CHROME
 # capabilities['loggingPrefs'] = { 'browser':'ALL' }
 
-# driver = webdriver.PhantomJS(desired_capabilities=capabilities)
+# driver = webdriver.Chrome(desired_capabilities=capabilities)
+
+capabilities = DesiredCapabilities.PHANTOMJS
+capabilities['loggingPrefs'] = { 'browser':'ALL' }
+
+driver = webdriver.PhantomJS(desired_capabilities=capabilities)
 
 driver.get('http://www.slither.io')
 
