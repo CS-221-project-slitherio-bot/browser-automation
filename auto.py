@@ -5,15 +5,21 @@ from time import sleep
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60
 
-# capabilities = DesiredCapabilities.CHROME
-# capabilities['loggingPrefs'] = { 'browser':'ALL' }
+supported_platform = ["chrome", "phantomjs"]
 
-# driver = webdriver.Chrome(desired_capabilities=capabilities)
+platform = 1
 
-capabilities = DesiredCapabilities.PHANTOMJS
-capabilities['loggingPrefs'] = { 'browser':'ALL' }
+if platform == 0:
+	capabilities = DesiredCapabilities.CHROME
+	capabilities['loggingPrefs'] = { 'browser':'ALL' }
 
-driver = webdriver.PhantomJS(desired_capabilities=capabilities)
+	driver = webdriver.Chrome(desired_capabilities=capabilities)
+
+elif platform == 1:
+	capabilities = DesiredCapabilities.PHANTOMJS
+	capabilities['loggingPrefs'] = { 'browser':'ALL' }
+
+	driver = webdriver.PhantomJS(desired_capabilities=capabilities)
 
 driver.get('http://www.slither.io')
 
@@ -28,10 +34,11 @@ log = []
 # print console log messages
 while True:
 	refresh_times += 1
-	for i, entry in enumerate(driver.get_log('browser')):
-		if i % 10 == 0 or "Game" in entry['message']:
-			entry_count += len(entry)
-			print(entry)
+	if platform != 1:
+		for i, entry in enumerate(driver.get_log('browser')):
+			if i % 10 == 0 or "Game" in entry['message']:
+				entry_count += len(entry)
+				print(entry)
 
 	if entry_count > MAX_ENTRY:
 		print("FINISHED" + str(refresh_times))
@@ -42,5 +49,9 @@ while True:
 		break;
 	sleep(1)
 
+if platform == 1:
+	for i, entry in enumerate(driver.get_log('browser')):
+		if i % 10 == 0 or "Game" in entry['message']:
+			print(entry)
 
 driver.close()
