@@ -14,37 +14,15 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 // @grant        none
 // ==/UserScript==
 
-function DumpObjectIndented(obj, indent)
-{
-  var result = "";
-  if (indent == null) indent = "";
+window.message_queue = [];
 
-  for (var property in obj)
-  {
-    var value = obj[property];
-    if (typeof value == 'string')
-      value = "'" + value + "'";
-    else if (typeof value == 'object')
-    {
-      if (value instanceof Array)
-      {
-        // Just let JS convert the Array to a string!
-        value = "[ " + value + " ]";
-      }
-      else
-      {
-        // Recursive dump
-        // (replace "  " by "\t" or something else if you prefer)
-        var od = DumpObjectIndented(value, indent + "  ");
-        // If you like { on the same line as the key
-        //value = "{" + od + "" + indent + "}";
-        // If you prefer { and } to be aligned
-        value = "" + indent + "{" + od + "" + indent + "}";
-      }
+window.get_last_in_queue = function(queue) {
+    var message_in_queue = [];
+    while (queue.length != 0) {
+        obj = queue.shift();
+        message_in_queue.push(obj);
     }
-    result += indent + "'" + property + "' : " + value + ",";
-  }
-  return result.replace(/,$/, "");
+    return message_in_queue;
 }
 
 /*
@@ -917,9 +895,15 @@ var bot = window.bot = (function() {
                 }
                 window.setAcceleration(bot.foodAccel());
             }
-            // console.log("Fact: " + "foods = " + DumpObjectIndented(window.foods) + ", snakes = " + DumpObjectIndented(window.snakes) + ", length = " + window.snake.sc)
-            // console.log("Fact: " + "foods = " + DumpObjectIndented(window.foods) + ", length = " + window.snake.sc)
-            console.log("Data: " + "collisionPoints = " + DumpObjectIndented(bot.collisionPoints) + ", length = " + Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1)
+            content = {
+                "collusion": bot.collisionPoints,
+                "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1
+            }
+            message = {
+                "type": "status",
+                "content": content
+            }
+            window.message_queue.push(JSON.stringify(message))
         },
 
         // Timer version of food check
