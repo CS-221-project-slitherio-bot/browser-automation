@@ -1,6 +1,7 @@
 import random
 from threading import Lock, Thread
 
+from collections import Iterable
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from time import sleep, time
@@ -51,15 +52,18 @@ class Bot(object):
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
 
-    def __init__(self, scheduler, log=None, debug=sys.stdout, name="Any Bot"):
+    def __init__(self, scheduler, predictor, log=None, debug=sys.stdout, name="Any Bot"):
         self.log = log
         self.debug = debug
         self.scheduler = scheduler
         self.is_running = False
         self.name = name
+        self.predictor = predictor
 
         self.start_time = 0
         self.event = None
+
+        self.last_status = None
 
     def debug_print(self, string):
         if self.debug:
@@ -121,6 +125,9 @@ class Bot(object):
         self.debug_print(str(len(result)) + "fps")
         self.process(result)
 
+    def change_parameter(self, parameter):
+        self.driver.execute_script("bot.opt.radiusMult = " + str(parameter))
+
     def process(self, result):
         last_message = result[-1]
         message_obj = json.loads(last_message)
@@ -141,13 +148,36 @@ class Bot(object):
             #TODO: retag the snake number of first_n_collusion
             feature_vector = (first_n_collusion, length)
             self.debug_print(str(feature_vector))
+            flatten_feature = list(self.flatten(feature_vector))
+            action = self.predict(flatten_feature)
+            self.change_parameter(action)
+            if self.last_status != None:
+                last_feature, last_action, last_length = self.last_status
+                last_reward = length = last_length
+                self.feedback(last_feature, last_action, last_reward)
+            self.last_status = (flatten_feature, action, length)
 
-class LearningSnake(object):
+    def flatten(self, t):
+        for t1 in t:
+            if isinstance(t1, Iterable):
+                yield from self.flatten(t1)
+            else:
+                yield t1
+
+    def predict(self, feature):
+        return self.predictor.action(feature)
+
+    def feedback(self, feature, action, reward):
+        self.predictor.feedback(feature, action, reward)
+
+
+class Learning(object):
     ACTION = [5, 10, 20, 30, 40, 60]
     DISCOUNT = 0.999
     EXPLORATION_PROB = 0.2
 
-    def _create_predictor(self):
+    @staticmethod
+    def _create_predictor():
         return MLPClassifier(solver="adam", hidden_layer_sizes=(15, 8, 3))
 
     def __init__(self, explore = True):
@@ -157,14 +187,14 @@ class LearningSnake(object):
         self.lock = Lock()
         self.sample = []
 
-    def getQ(self, state, action):
+    def q(self, state, action):
         return self.predictor.predict(state + [action])
 
-    def getAction(self, state):
+    def action(self, state):
         if random.random() < self.EXPLORATION_PROB:
             return random.choice(self.ACTION)
         else:
-            return max((self.getQ(state, action), action) for action in self.ACTION)[1]
+            return max((self.q(state, action), action) for action in self.ACTION)[1]
 
     def feedback(self, state, action, reward):
         self.sample += [(state + [action], reward)]
@@ -191,8 +221,9 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
+bot_predictor = Learning()
 
-with WithList([Bot(bot_scheduler, sys.stdout, sys.stdout, "Bot " + str(i)) for i in range(1)]) as bots:
+with WithList([Bot(bot_scheduler, bot_predictor, sys.stdout, sys.stdout, "Bot " + str(i)) for i in range(1)]) as bots:
     for bot in bots:
         bot.run()
     start_time = time()
