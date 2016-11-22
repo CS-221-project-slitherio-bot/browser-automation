@@ -11,6 +11,7 @@ import json
 import math
 from sklearn.neural_network import MLPRegressor
 from sklearn.externals import joblib
+from sklearn.preprocessing import StandardScaler
 import sklearn
 
 
@@ -185,6 +186,7 @@ class Learning(object):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.predictor = self._create_predictor()
+        self.scaler = StandardScaler()
         self.lock = Lock()
         self.sample = []
         self.trained = False
@@ -208,8 +210,10 @@ class Learning(object):
     def train(self, training_sample):
         temp_predictor = sklearn.clone(self.predictor)
         X = [sample[0] for sample in training_sample]
+        if not self.trained:
+            self.scaler.fit(X)
+        X = self.scaler.transform(X)
         Y = [sample[1] for sample in training_sample]
-        #TODO: normalize sample
         temp_predictor.fit(X, Y)
         #TODO: persistant model
         self.predictor = temp_predictor
