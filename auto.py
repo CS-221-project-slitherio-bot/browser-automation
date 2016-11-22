@@ -22,6 +22,7 @@ COLLUSION_COUNT = 10
 FAR_R = 10000000
 FAR_P = -1
 FAR_SNAKE = -1
+BOT_COUNT = 8
 
 supported_platform = ["chrome", "phantomjs"]
 
@@ -123,7 +124,8 @@ class Bot(object):
         if self.is_running:
             self.schedule_next()
         result = self.driver.execute_script("return window.get_last_in_queue(window.message_queue)")
-        self.log_print(str(result))
+        for entry in result:
+            self.log_print(str(entry))
         self.debug_print(str(len(result)) + "fps")
         self.process(result)
 
@@ -258,11 +260,12 @@ class WithList(list):
 bot_scheduler = scheduler(time, sleep)
 bot_predictor = Learning(explore=True, predictor_file="predictor.model", scaler_file="scaler.model", load=False)
 
-with WithList([Bot(bot_scheduler, bot_predictor, None, sys.stdout, "Bot " + str(i)) for i in range(8)]) as bots:
-    for bot in bots:
-        bot.run()
-    start_time = time()
-    while time() - start_time < COLLECTION_TIMEOUT:
-        bot_scheduler.run(blocking=False)
-    for bot in bots:
-        bot.stop()
+with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
+    with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
+        for bot in bots:
+            bot.run()
+        start_time = time()
+        while time() - start_time < COLLECTION_TIMEOUT:
+            bot_scheduler.run(blocking=False)
+        for bot in bots:
+            bot.stop()
