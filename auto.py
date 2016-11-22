@@ -138,6 +138,7 @@ class Bot(object):
             return
         json_result = [json.loads(message) for message in result]
         dead = False
+        last_message_obj = None
         for message in json_result:
             if "type" in message and message["type"] == "result":
                 final_length = message["content"]["length"]
@@ -147,7 +148,7 @@ class Bot(object):
             else:
                 last_message_obj = message
         # self.debug_print(str(message_obj))
-        if last_message_obj and "type" in last_message_obj and last_message_obj["type"] == "status":
+        if last_message_obj is not None and "type" in last_message_obj and last_message_obj["type"] == "status":
             content = last_message_obj["content"]
             length = content["length"]
             collusion_xy = content["collusion"]
