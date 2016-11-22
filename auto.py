@@ -142,7 +142,7 @@ class Bot(object):
             else:
                 last_message_obj = message
         # self.debug_print(str(message_obj))
-        if "type" in last_message_obj and last_message_obj["type"] == "status":
+        if last_message_obj and "type" in last_message_obj and last_message_obj["type"] == "status":
             content = last_message_obj["content"]
             length = content["length"]
             collusion_xy = content["collusion"]
