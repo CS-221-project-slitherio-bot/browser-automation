@@ -65,6 +65,7 @@ class Bot(object):
         self.event = None
 
         self.last_status = None
+        self.just_dead = False
 
     def debug_print(self, string):
         if self.debug:
@@ -130,7 +131,8 @@ class Bot(object):
         self.driver.execute_script("bot.opt.radiusMult = " + str(parameter))
 
     def process(self, result):
-        if len(result) == 0:
+        if self.just_dead:
+            self.just_dead = False
             return
         json_result = [json.loads(message) for message in result]
         dead = False
@@ -139,6 +141,7 @@ class Bot(object):
                 final_length = message["content"]["length"]
                 self.debug_print("Game end, final length: " + str(final_length))
                 dead = True
+                self.just_dead = True
             else:
                 last_message_obj = message
         # self.debug_print(str(message_obj))
