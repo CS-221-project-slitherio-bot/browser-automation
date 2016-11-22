@@ -9,7 +9,7 @@ from sched import scheduler
 import sys
 import json
 import math
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 from sklearn.externals import joblib
 import sklearn
 
@@ -175,10 +175,11 @@ class Learning(object):
     ACTION = [5, 10, 20, 30, 40, 60]
     DISCOUNT = 0.999
     EXPLORATION_PROB = 0.2
+    BATCH_COUNT = 50
 
     @staticmethod
     def _create_predictor():
-        return MLPClassifier(solver="adam", hidden_layer_sizes=(15, 8, 3))
+        return MLPRegressor(solver="adam", hidden_layer_sizes=(15, 8, 3))
 
     def __init__(self, explore = True):
         if not explore:
@@ -186,12 +187,13 @@ class Learning(object):
         self.predictor = self._create_predictor()
         self.lock = Lock()
         self.sample = []
+        self.trained = False
 
     def q(self, state, action):
         return self.predictor.predict(state + [action])
 
     def action(self, state):
-        if random.random() < self.EXPLORATION_PROB:
+        if random.random() < self.EXPLORATION_PROB or self.trained == False:
             return random.choice(self.ACTION)
         else:
             return max((self.q(state, action), action) for action in self.ACTION)[1]
@@ -200,7 +202,7 @@ class Learning(object):
         self.sample += [(state + [action], reward)]
         training_sample = self.sample
         self.sample = []
-        if len(self.sample) > 200:
+        if len(self.sample) > self.BATCH_COUNT:
             Thread(target=self.train, name="training thread", args=training_sample)
 
     def train(self, training_sample):
@@ -211,6 +213,7 @@ class Learning(object):
         temp_predictor.fit(X, Y)
         #TODO: persistant model
         self.predictor = temp_predictor
+        self.trained = True
 
 class WithList(list):
     def __enter__(self):
