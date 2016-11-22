@@ -148,7 +148,7 @@ class Bot(object):
             first_n_collusion = sorted_collusion[0: COLLUSION_COUNT]
             #TODO: retag the snake number of first_n_collusion
             feature_vector = (first_n_collusion, length)
-            self.debug_print(str(feature_vector))
+            # self.debug_print(str(feature_vector))
             flatten_feature = list(self.flatten(feature_vector))
             action = self.predict(flatten_feature)
             self.change_parameter(action)
@@ -208,6 +208,7 @@ class Learning(object):
             Thread(target=self.train, name="training thread", args=training_sample)
 
     def train(self, training_sample):
+        print("start training!")
         temp_predictor = sklearn.clone(self.predictor)
         X = [sample[0] for sample in training_sample]
         if not self.trained:
@@ -218,6 +219,7 @@ class Learning(object):
         #TODO: persistant model
         self.predictor = temp_predictor
         self.trained = True
+        print("training complete!")
 
 class WithList(list):
     def __enter__(self):
@@ -230,11 +232,11 @@ class WithList(list):
 bot_scheduler = scheduler(time, sleep)
 bot_predictor = Learning()
 
-with WithList([Bot(bot_scheduler, bot_predictor, sys.stdout, sys.stdout, "Bot " + str(i)) for i in range(1)]) as bots:
+with WithList([Bot(bot_scheduler, bot_predictor, None, sys.stdout, "Bot " + str(i)) for i in range(8)]) as bots:
     for bot in bots:
         bot.run()
     start_time = time()
-    while time() - start_time < 20:
+    while time() - start_time < 1000:
         bot_scheduler.run(blocking=False)
     for bot in bots:
         bot.stop()
