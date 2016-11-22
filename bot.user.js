@@ -1481,7 +1481,4 @@ var userInterface = window.userInterface = (function() {
 
     // Start!
     userInterface.oefTimer();
-
-    console.log("GAME START");
-    window.play_btn.btnf.click();
 })();

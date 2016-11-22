@@ -33,6 +33,9 @@ def open_driver(platform_id):
 class Bot(object):
     """Slither.io Bot"""
     POOLING_INTERVAL = 1
+    START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
+    END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
+
 
     def __init__(self, scheduler, log=None, debug=sys.stdout, name="Any Bot"):
         self.log = log
@@ -55,6 +58,7 @@ class Bot(object):
     def __enter__(self):
         self.driver = open_driver(platform)
         self.driver.get('http://www.slither.io')
+        self.debug_print("webpage ready")
 
         with open("bot.user.js", "r") as scriptFile:
             script = scriptFile.read()
@@ -66,8 +70,15 @@ class Bot(object):
         self.driver.close()
         self.debug_print("bot destroyed")
 
+    def _start_game(self):
+        self.driver.execute_script(self.START_SCRIPT)
+
+    def _end_game(self):
+        self.driver.execute_script(self.END_SCRIPT)
+
     def run(self):
         if not self.is_running:
+            self._start_game()
             self.is_running = True
             self.start_time = time()
             self.schedule_next()
@@ -77,6 +88,7 @@ class Bot(object):
 
     def stop(self):
         if self.is_running:
+            self._end_game()
             self.is_running = False
             self.debug_print("bot stopped")
         else:
@@ -107,7 +119,7 @@ class WithList(list):
 
 bot_scheduler = scheduler(time, sleep)
 
-with WithList([Bot(bot_scheduler, None, sys.stdout, "Bot " + str(i)) for i in range(8)]) as bots:
+with WithList([Bot(bot_scheduler, sys.stdout, sys.stdout, "Bot " + str(i)) for i in range(1)]) as bots:
     for bot in bots:
         bot.run()
     start_time = time()
