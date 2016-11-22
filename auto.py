@@ -184,14 +184,22 @@ class Learning(object):
     def _create_predictor():
         return MLPRegressor(solver="adam", hidden_layer_sizes=(15, 8, 3))
 
-    def __init__(self, explore = True):
+    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False):
         if not explore:
             self.EXPLORATION_PROB = 0
-        self.predictor = self._create_predictor()
-        self.scaler = StandardScaler()
         self.lock = Lock()
         self.sample = []
         self.trained = False
+        self.predictor_file = predictor_file
+        self.scaler_file = scaler_file
+        if load:
+            self.predictor = joblib.load(predictor_file)
+            self.scaler = joblib.load(scaler_file)
+            self.trained = True
+        else:
+            self.predictor = self._create_predictor()
+            self.scaler = StandardScaler()
+            self.trained = False
 
     def q(self, state, action):
         X = state + [action]
@@ -217,11 +225,12 @@ class Learning(object):
         X = [sample[0] for sample in training_sample]
         if not self.trained:
             self.scaler.fit(X)
+            joblib.dump(self.scaler, self.scaler_file)
         X = self.scaler.transform(X)
         Y = [sample[1] for sample in training_sample]
         temp_predictor.fit(X, Y)
-        #TODO: persistant model
         self.predictor = temp_predictor
+        joblib.dump(self.predictor, self.predictor_file)
         self.trained = True
         print("training complete!")
 
@@ -234,7 +243,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning()
+bot_predictor = Learning(explore=True, predictor_file="predictor.model", scaler_file="scaler.model", load=True)
 
 with WithList([Bot(bot_scheduler, bot_predictor, None, sys.stdout, "Bot " + str(i)) for i in range(8)]) as bots:
     for bot in bots:
