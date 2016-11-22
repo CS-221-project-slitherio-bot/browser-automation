@@ -262,7 +262,7 @@ with WithList([Bot(bot_scheduler, bot_predictor, None, sys.stdout, "Bot " + str(
     for bot in bots:
         bot.run()
     start_time = time()
-    while time() - start_time < 1000:
+    while time() - start_time < COLLECTION_TIMEOUT:
         bot_scheduler.run(blocking=False)
     for bot in bots:
         bot.stop()
