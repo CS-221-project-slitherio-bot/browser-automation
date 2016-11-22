@@ -1350,7 +1350,17 @@ var userInterface = window.userInterface = (function() {
             } else if (bot.isBotEnabled && bot.isBotRunning) {
                 bot.isBotRunning = false;
                 if (window.lastscore && window.lastscore.childNodes[1]) {
-                    bot.scores.push(parseInt(window.lastscore.childNodes[1].innerHTML));
+                    lastScore = parseInt(window.lastscore.childNodes[1].innerHTML)
+
+                    message = {
+                        "type": "result",
+                        "content": {
+                            "length": lastScore
+                        }
+                    }
+                    window.message_queue.push(JSON.stringify(message))
+
+                    bot.scores.push(lastScore);
                     bot.scores.sort(function(a, b) {
                         return b - a;
                     });

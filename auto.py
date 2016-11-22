@@ -132,11 +132,18 @@ class Bot(object):
     def process(self, result):
         if len(result) == 0:
             return
-        last_message = result[-1]
-        message_obj = json.loads(last_message)
+        json_result = [json.loads(message) for message in result]
+        dead = False
+        for message in json_result:
+            if "type" in message and message["type"] == "result":
+                final_length = message["content"]["length"]
+                self.debug_print("Game end, final length: " + str(final_length))
+                dead = True
+            else:
+                last_message_obj = message
         # self.debug_print(str(message_obj))
-        if "type" in message_obj and message_obj["type"] == "status":
-            content = message_obj["content"]
+        if "type" in last_message_obj and last_message_obj["type"] == "status":
+            content = last_message_obj["content"]
             length = content["length"]
             collusion_xy = content["collusion"]
             snake_xy = content["snake"]
@@ -156,7 +163,10 @@ class Bot(object):
             self.change_parameter(action)
             if self.last_status != None:
                 last_feature, last_action, last_length = self.last_status
-                last_reward = length = last_length
+                if not dead:
+                    last_reward = length - last_length
+                else:
+                    last_reward = - 10 * final_length
                 self.feedback(last_feature, last_action, last_reward)
             self.last_status = (flatten_feature, action, length)
 
