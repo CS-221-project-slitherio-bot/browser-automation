@@ -16,7 +16,7 @@ import sklearn
 import numpy as np
 
 MAX_ENTRY = 300
-COLLECTION_TIMEOUT = 60 * 60 * 2
+COLLECTION_TIMEOUT = 60 * 60 * 10
 
 COLLUSION_COUNT = 10
 FAR_R = 10000000
@@ -195,7 +195,7 @@ class Learning(object):
 
     @staticmethod
     def _create_predictor():
-        return MLPRegressor(solver="adam", hidden_layer_sizes=(15, 8, 3))
+        return MLPRegressor(solver="adam", hidden_layer_sizes=(18, 15, 10, 8, 3))
 
     def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False):
         if not explore:
@@ -256,7 +256,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, predictor_file="predictor.model", scaler_file="scaler.model", load=True)
+bot_predictor = Learning(explore=True, predictor_file="predictor.model", scaler_file="scaler.model", load=False)
 
 with WithList([Bot(bot_scheduler, bot_predictor, None, sys.stdout, "Bot " + str(i)) for i in range(8)]) as bots:
     for bot in bots:
