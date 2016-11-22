@@ -13,7 +13,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.externals import joblib
 from sklearn.preprocessing import StandardScaler
 import sklearn
-
+import numpy as np
 
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60 * 60 * 2
@@ -130,6 +130,8 @@ class Bot(object):
         self.driver.execute_script("bot.opt.radiusMult = " + str(parameter))
 
     def process(self, result):
+        if len(result) == 0:
+            return
         last_message = result[-1]
         message_obj = json.loads(last_message)
         # self.debug_print(str(message_obj))
@@ -192,7 +194,9 @@ class Learning(object):
         self.trained = False
 
     def q(self, state, action):
-        return self.predictor.predict(state + [action])
+        X = state + [action]
+        X = np.array(X).reshape(1, -1)
+        return self.predictor.predict(X)
 
     def action(self, state):
         if random.random() < self.EXPLORATION_PROB or self.trained == False:
@@ -202,10 +206,10 @@ class Learning(object):
 
     def feedback(self, state, action, reward):
         self.sample += [(state + [action], reward)]
-        training_sample = self.sample
-        self.sample = []
         if len(self.sample) > self.BATCH_COUNT:
-            Thread(target=self.train, name="training thread", args=training_sample)
+            training_sample = self.sample
+            self.sample = []
+            Thread(target=self.train, name="training thread", kwargs={"training_sample": training_sample}).start()
 
     def train(self, training_sample):
         print("start training!")
