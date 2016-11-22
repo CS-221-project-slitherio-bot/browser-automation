@@ -1,11 +1,25 @@
+import random
+from threading import Lock, Thread
+
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from time import sleep, time
 from sched import scheduler
 import sys
+import json
+import math
+from sklearn.neural_network import MLPClassifier
+from sklearn.externals import joblib
+import sklearn
+
 
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60 * 60 * 2
+
+COLLUSION_COUNT = 10
+FAR_R = 10000000
+FAR_P = -1
+FAR_SNAKE = -1
 
 supported_platform = ["chrome", "phantomjs"]
 
@@ -105,9 +119,68 @@ class Bot(object):
         result = self.driver.execute_script("return window.get_last_in_queue(window.message_queue)")
         self.log_print(str(result))
         self.debug_print(str(len(result)) + "fps")
+        self.process(result)
 
     def process(self, result):
-        pass
+        last_message = result[-1]
+        message_obj = json.loads(last_message)
+        # self.debug_print(str(message_obj))
+        if "type" in message_obj and message_obj["type"] == "status":
+            content = message_obj["content"]
+            length = content["length"]
+            collusion_xy = content["collusion"]
+            snake_xy = content["snake"]
+            def rp(a, b):
+                dx = a["xx"] - b["xx"]
+                dy = a["yy"] - b["yy"]
+                return (dx**2 + dy**2, math.atan2(dy, dx))
+            collusion_rp = [(xy["snake"], rp(xy, snake_xy)) for xy in collusion_xy]
+            sorted_collusion = sorted(collusion_rp + [(FAR_SNAKE, (FAR_R, FAR_P))] * COLLUSION_COUNT,
+                                      key = lambda x: x[1][0])
+            first_n_collusion = sorted_collusion[0: COLLUSION_COUNT]
+            #TODO: retag the snake number of first_n_collusion
+            feature_vector = (first_n_collusion, length)
+            self.debug_print(str(feature_vector))
+
+class LearningSnake(object):
+    ACTION = [5, 10, 20, 30, 40, 60]
+    DISCOUNT = 0.999
+    EXPLORATION_PROB = 0.2
+
+    def _create_predictor(self):
+        return MLPClassifier(solver="adam", hidden_layer_sizes=(15, 8, 3))
+
+    def __init__(self, explore = True):
+        if not explore:
+            self.EXPLORATION_PROB = 0
+        self.predictor = self._create_predictor()
+        self.lock = Lock()
+        self.sample = []
+
+    def getQ(self, state, action):
+        return self.predictor.predict(state + [action])
+
+    def getAction(self, state):
+        if random.random() < self.EXPLORATION_PROB:
+            return random.choice(self.ACTION)
+        else:
+            return max((self.getQ(state, action), action) for action in self.ACTION)[1]
+
+    def feedback(self, state, action, reward):
+        self.sample += [(state + [action], reward)]
+        training_sample = self.sample
+        self.sample = []
+        if len(self.sample) > 200:
+            Thread(target=self.train, name="training thread", args=training_sample)
+
+    def train(self, training_sample):
+        temp_predictor = sklearn.clone(self.predictor)
+        X = [sample[0] for sample in training_sample]
+        Y = [sample[1] for sample in training_sample]
+        #TODO: normalize sample
+        temp_predictor.fit(X, Y)
+        #TODO: persistant model
+        self.predictor = temp_predictor
 
 class WithList(list):
     def __enter__(self):

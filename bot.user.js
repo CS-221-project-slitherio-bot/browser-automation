@@ -895,13 +895,16 @@ var bot = window.bot = (function() {
                 }
                 window.setAcceleration(bot.foodAccel());
             }
-            content = {
-                "collusion": bot.collisionPoints,
-                "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1
-            }
             message = {
                 "type": "status",
-                "content": content
+                "content": {
+                    "collusion": bot.collisionPoints,
+                    "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1,
+                    "snake": {
+                        "xx": window.snake.xx,
+                        "yy": window.snake.yy
+                    }
+                }
             }
             window.message_queue.push(JSON.stringify(message))
         },
