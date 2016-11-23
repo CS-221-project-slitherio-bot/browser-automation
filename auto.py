@@ -194,7 +194,7 @@ class Learning(object):
     ACTION = [5, 10, 20, 30, 40, 60]
     DISCOUNT = 0.999
     EXPLORATION_PROB = 0.2
-    BATCH_COUNT = 50
+    BATCH_COUNT = 200
 
     @staticmethod
     def _create_predictor():
