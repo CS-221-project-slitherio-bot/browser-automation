@@ -223,7 +223,7 @@ class Learning(object):
     def q(self, state, action):
         X = state + [action]
         X = np.array(X).reshape(1, -1)
-        return self.predictor.predict(X)
+        return self.predictor.predict(X)[0]
 
     def action(self, state):
         if random.random() < self.EXPLORATION_PROB or self.trained == False:
