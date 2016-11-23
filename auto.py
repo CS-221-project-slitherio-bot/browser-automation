@@ -171,9 +171,10 @@ class Bot(object):
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
                     last_reward = length - last_length
+                    self.feedback(last_feature, last_action, last_reward, flatten_feature)
                 else:
                     last_reward = - 10 * final_length
-                self.feedback(last_feature, last_action, last_reward)
+                    self.feedback(last_feature, last_action, last_reward, None)
             self.last_status = (flatten_feature, action, length)
 
     def flatten(self, t):
@@ -186,8 +187,8 @@ class Bot(object):
     def predict(self, feature):
         return self.predictor.action(feature)
 
-    def feedback(self, feature, action, reward):
-        self.predictor.feedback(feature, action, reward)
+    def feedback(self, feature, action, reward, new_state):
+        self.predictor.feedback(feature, action, reward, new_state)
 
 
 class Learning(object):
@@ -230,10 +231,16 @@ class Learning(object):
         else:
             return max((self.q(state, action), action) for action in self.ACTION)[1]
 
-    def feedback(self, state, action, reward, newState):
-        newValue, _ = max((self.q(state, action), action) for action in self.ACTION)
-        newQ = (1 - self.learning_rate) * self.q(state, action) + \
-               self.learning_rate * (reward + self.discount * newValue)
+    def feedback(self, state, action, reward, new_state):
+        if self.trained:
+            if new_state is None:
+                newValue = 0
+            else:
+                newValue, _ = max((self.q(new_state, action), action) for action in self.ACTION)
+            newQ = (1 - self.learning_rate) * self.q(state, action) + \
+                   self.learning_rate * (reward + self.discount * newValue)
+        else:
+            newQ = reward
         self.sample += [(state + [action], newQ)]
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
