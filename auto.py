@@ -22,7 +22,7 @@ COLLUSION_COUNT = 10
 FAR_R = 10000000
 FAR_P = -1
 FAR_SNAKE = -1
-BOT_COUNT = 8
+BOT_COUNT = 16
 
 supported_platform = ["chrome", "phantomjs"]
 
@@ -49,7 +49,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 1
+    POOLING_INTERVAL = 10
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -144,7 +144,7 @@ class Bot(object):
                 final_length = message["content"]["length"]
                 self.debug_print("Game end, final length: " + str(final_length))
                 dead = True
-                self.just_dead = 10
+                self.just_dead = 2
             else:
                 last_message_obj = message
         # self.debug_print(str(message_obj))
@@ -194,11 +194,11 @@ class Learning(object):
     ACTION = [5, 10, 20, 30, 40, 60]
     DISCOUNT = 0.999
     EXPLORATION_PROB = 0.2
-    BATCH_COUNT = 50
+    BATCH_COUNT = 500
 
     @staticmethod
     def _create_predictor():
-        return MLPRegressor(solver="adam", hidden_layer_sizes=(18, 15, 10, 8, 3))
+        return MLPRegressor(solver="adam", hidden_layer_sizes=(15, 10, 8, 3))
 
     def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False):
         if not explore:
