@@ -200,7 +200,7 @@ class Learning(object):
     def _create_predictor():
         return MLPRegressor(solver="adam", hidden_layer_sizes=(18, 15, 10, 8, 3))
 
-    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False):
+    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False, learning_rate = 0.90, discount = 0.98):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
@@ -208,6 +208,8 @@ class Learning(object):
         self.trained = False
         self.predictor_file = predictor_file
         self.scaler_file = scaler_file
+        self.learning_rate = learning_rate
+        self.discount = discount
         if load:
             self.predictor = joblib.load(predictor_file)
             self.scaler = joblib.load(scaler_file)
@@ -228,8 +230,11 @@ class Learning(object):
         else:
             return max((self.q(state, action), action) for action in self.ACTION)[1]
 
-    def feedback(self, state, action, reward):
-        self.sample += [(state + [action], reward)]
+    def feedback(self, state, action, reward, newState):
+        newValue, _ = max((self.q(state, action), action) for action in self.ACTION)
+        newQ = (1 - self.learning_rate) * self.q(state, action) + \
+               self.learning_rate * (reward + self.discount * newValue)
+        self.sample += [(state + [action], newQ)]
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
             self.sample = []
