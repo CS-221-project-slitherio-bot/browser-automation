@@ -22,7 +22,7 @@ COLLUSION_COUNT = 10
 FAR_R = 10000000
 FAR_P = -1
 FAR_SNAKE = -1
-BOT_COUNT = 8
+BOT_COUNT = 32
 
 supported_platform = ["chrome", "phantomjs"]
 
