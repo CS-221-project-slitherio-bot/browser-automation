@@ -22,7 +22,7 @@ COLLUSION_COUNT = 10
 FAR_R = 10000000
 FAR_P = -1
 FAR_SNAKE = -1
-BOT_COUNT = 8
+BOT_COUNT = 24
 
 supported_platform = ["chrome", "phantomjs"]
 
@@ -195,7 +195,7 @@ class Learning(object):
     ACTION = [5, 10, 20, 30, 40, 60]
     DISCOUNT = 0.999
     EXPLORATION_PROB = 0.2
-    BATCH_COUNT = 50
+    BATCH_COUNT = 500
 
     @staticmethod
     def _create_predictor():
