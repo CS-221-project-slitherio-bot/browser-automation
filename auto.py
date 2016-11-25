@@ -173,7 +173,7 @@ class Bot(object):
                     last_reward = length - last_length
                     self.feedback(last_feature, last_action, last_reward, flatten_feature)
                 else:
-                    last_reward = - 10 * final_length
+                    last_reward = - last_length
                     self.feedback(last_feature, last_action, last_reward, None)
             self.last_status = (flatten_feature, action, length)
 

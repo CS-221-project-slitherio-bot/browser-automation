@@ -372,6 +372,7 @@ var bot = window.bot = (function() {
         defaultAccel: 0,
         sectorBox: {},
         currentFood: {},
+        isDead: false,
         opt: {
             // These are the bot's default options
             // If you wish to customise these, use
@@ -895,6 +896,16 @@ var bot = window.bot = (function() {
                 }
                 window.setAcceleration(bot.foodAccel());
             }
+            if (window.bot.isDead === false && window.snake.alive_amt !== 1) {
+                message = {
+                    "type": "result",
+                    "content": {
+                        "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1
+                    }
+                }
+                window.message_queue.push(JSON.stringify(message))
+                window.bot.isDead = true;
+            }
             message = {
                 "type": "status",
                 "content": {
@@ -1352,14 +1363,6 @@ var userInterface = window.userInterface = (function() {
                 if (window.lastscore && window.lastscore.childNodes[1]) {
                     lastScore = parseInt(window.lastscore.childNodes[1].innerHTML)
 
-                    message = {
-                        "type": "result",
-                        "content": {
-                            "length": lastScore
-                        }
-                    }
-                    window.message_queue.push(JSON.stringify(message))
-
                     bot.scores.push(lastScore);
                     bot.scores.sort(function(a, b) {
                         return b - a;
@@ -1370,6 +1373,7 @@ var userInterface = window.userInterface = (function() {
                 if (window.autoRespawn) {
                     console.log("GAME END");
                     console.log("GAME START");
+                    window.bot.isDead = false;
                     window.connect();
                 }
             }
