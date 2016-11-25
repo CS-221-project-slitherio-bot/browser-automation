@@ -142,7 +142,6 @@ class Bot(object):
         for message in json_result:
             if "type" in message and message["type"] == "result":
                 final_length = message["content"]["length"]
-                self.debug_print("Game end, final length: " + str(final_length))
                 dead = True
                 self.just_dead = 10
             else:
@@ -174,6 +173,7 @@ class Bot(object):
                     self.feedback(last_feature, last_action, last_reward, flatten_feature)
                 else:
                     last_reward = - last_length
+                    self.debug_print("Game end, final length: " + str(last_length))
                     self.feedback(last_feature, last_action, last_reward, None)
             self.last_status = (flatten_feature, action, length)
 
