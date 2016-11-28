@@ -223,6 +223,7 @@ class Learning(object):
     def q(self, state, action):
         X = state + [action]
         X = np.array(X).reshape(1, -1)
+        self.scaler.fit(X)
         return self.predictor.predict(X)[0]
 
     def action(self, state):
