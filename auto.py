@@ -256,7 +256,7 @@ class Learning(object):
             joblib.dump(self.scaler, self.scaler_file)
         X = self.scaler.transform(X)
         Y = [sample[1] for sample in training_sample]
-        temp_predictor.fit(X, Y)
+        temp_predictor.partial_fit(X, Y)
         self.predictor = temp_predictor
         joblib.dump(self.predictor, self.predictor_file)
         self.trained = True
