@@ -182,7 +182,7 @@ class Bot(object):
             if isinstance(t1, Iterable):
                 yield from self.flatten(t1)
             else:
-                yield t1
+                yield 1.0 * t1
 
     def predict(self, feature):
         return self.predictor.action(feature)
@@ -201,7 +201,7 @@ class Learning(object):
     def _create_predictor():
         return MLPRegressor(solver="adam", hidden_layer_sizes=(18, 15, 10, 8, 3))
 
-    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False, learning_rate = 0.90, discount = 0.98):
+    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False, learning_rate = 0.05, discount = 0.98):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
