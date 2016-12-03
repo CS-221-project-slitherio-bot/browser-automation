@@ -278,29 +278,25 @@ class Learning(object):
     def _create_predictor():
         return MLPRegressor(solver="adam", hidden_layer_sizes=(80, 40, 10, 5))
 
-    def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False, learning_rate = 0.05, discount = 0.98):
+    def __init__(self, explore = True, predictor_file = None, load = False, learning_rate = 0.05, discount = 0.98):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
         self.sample = []
         self.trained = False
         self.predictor_file = predictor_file
-        self.scaler_file = scaler_file
         self.learning_rate = learning_rate
         self.discount = discount
         if load:
             self.predictor = joblib.load(predictor_file)
-            self.scaler = joblib.load(scaler_file)
             self.trained = True
         else:
             self.predictor = self._create_predictor()
-            self.scaler = StandardScaler()
             self.trained = False
 
     def q(self, state, action):
         X = state + [action]
         X = np.array(X).reshape(1, -1)
-        self.scaler.fit(X)
         return self.predictor.predict(X)[0]
 
     def action(self, state):
@@ -329,10 +325,6 @@ class Learning(object):
         print("start training!")
         temp_predictor = sklearn.clone(self.predictor)
         X = [sample[0] for sample in training_sample]
-        if not self.trained:
-            self.scaler.fit(X)
-            joblib.dump(self.scaler, self.scaler_file)
-        X = self.scaler.transform(X)
         Y = [sample[1] for sample in training_sample]
         temp_predictor.partial_fit(X, Y)
         self.predictor = temp_predictor
@@ -349,7 +341,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, predictor_file="predictor.model", scaler_file="scaler.model", load=False)
+bot_predictor = Learning(explore=True, predictor_file="predictor.model", load=False)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
