@@ -241,7 +241,8 @@ class Bot(object):
 
             # self.debug_print("feature length: " + str(len(flatten_feature)))
             action = self.predict(flatten_feature)
-            self.change_parameter(action)
+            self.debug_print("weight: %f, action: %s" % (action[0], str(action[1])))
+            self.change_parameter(action[1])
             if (self.just_dead == 0 or dead) and self.last_status is not None:
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
@@ -310,9 +311,9 @@ class Learning(object):
 
     def action(self, state):
         if random.random() < self.EXPLORATION_PROB or self.trained == False:
-            return random.choice(self.ACTION)
+            return (0, random.choice(self.ACTION))
         else:
-            return max((self.q(state, action), action) for action in self.ACTION)[1]
+            return max((self.q(state, action), action) for action in self.ACTION)
 
     def feedback(self, state, action, reward, new_state):
         if self.trained:
@@ -324,7 +325,6 @@ class Learning(object):
                    self.learning_rate * (reward + self.discount * newValue)
         else:
             newQ = reward
-        print(action)
         print(len(state + self.action_to_array(action)))
         self.sample += [(state + self.action_to_array(action), newQ)]
         if len(self.sample) > self.BATCH_COUNT:
