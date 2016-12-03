@@ -145,7 +145,8 @@ class Bot(object):
         self.process(result)
 
     def change_parameter(self, parameter):
-        angle, boost = parameter
+        angle_dimension, boost = parameter
+        angle = (2 * math.pi / DIMENSION) * angle_dimension - math.pi
         x = 100 * math.sin(angle)
         y = 100 * math.cos(angle)
         if_boost = 1 if boost else 0
@@ -269,7 +270,7 @@ class Bot(object):
 
 
 class Learning(object):
-    ACTION = [((2 * math.pi / DIMENSION) * i - math.pi, boost) for i in range(DIMENSION) for boost in [True, False]]
+    ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
     EXPLORATION_PROB = 0.0
     BATCH_COUNT = 500
@@ -295,9 +296,17 @@ class Learning(object):
             self.trained = False
 
     def q(self, state, action):
-        X = state + [action]
+        X = state + self.action_to_array(action)
         X = np.array(X).reshape(1, -1)
         return self.predictor.predict(X)[0]
+
+    @staticmethod
+    def action_to_array(action):
+        feature = [0.0] * DIMENSION + [0.0]
+        angle_dimension, boost = action
+        feature[angle_dimension] = 1.0
+        feature[-1] = 1.0 if boost else 0.0
+        return feature
 
     def action(self, state):
         if random.random() < self.EXPLORATION_PROB or self.trained == False:
@@ -315,7 +324,9 @@ class Learning(object):
                    self.learning_rate * (reward + self.discount * newValue)
         else:
             newQ = reward
-        self.sample += [(state + [action], newQ)]
+        print(action)
+        print(len(state + self.action_to_array(action)))
+        self.sample += [(state + self.action_to_array(action), newQ)]
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
             self.sample = []
@@ -326,6 +337,8 @@ class Learning(object):
         temp_predictor = sklearn.clone(self.predictor)
         X = [sample[0] for sample in training_sample]
         Y = [sample[1] for sample in training_sample]
+        X = np.array(X)
+        Y = np.array(Y)
         print(Y)
         temp_predictor.partial_fit(X, Y)
         self.predictor = temp_predictor
