@@ -240,9 +240,10 @@ class Bot(object):
             flatten_feature = list(self.flatten((collusion_feature, food_feature)))
 
             # self.debug_print("feature length: " + str(len(flatten_feature)))
-            action = self.predict(flatten_feature)
-            self.debug_print("weight: %f, action: %s" % (action[0], str(action[1])))
-            self.change_parameter(action[1])
+            predict_result = self.predict(flatten_feature)
+            action = predict_result[1]
+            self.debug_print("weight: %f, action: %s" % (predict_result[0], str(predict_result[1])))
+            self.change_parameter(action)
             if (self.just_dead == 0 or dead) and self.last_status is not None:
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
