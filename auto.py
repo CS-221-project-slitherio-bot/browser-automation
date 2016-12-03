@@ -184,7 +184,7 @@ class Bot(object):
                     return sz
             else:
                 def normalize_distance(d):
-                    return 1.0 / (math.log2(d) + 1.0)
+                    return 1.0 / (math.log2(d + 1.0) + 1.0)
 
                 def normalize_food(sz):
                     return math.log(sz + 1.0, 10) / 5
