@@ -326,6 +326,7 @@ class Learning(object):
         temp_predictor = sklearn.clone(self.predictor)
         X = [sample[0] for sample in training_sample]
         Y = [sample[1] for sample in training_sample]
+        print(Y)
         temp_predictor.partial_fit(X, Y)
         self.predictor = temp_predictor
         joblib.dump(self.predictor, self.predictor_file)
