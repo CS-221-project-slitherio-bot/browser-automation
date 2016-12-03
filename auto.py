@@ -145,7 +145,13 @@ class Bot(object):
         self.process(result)
 
     def change_parameter(self, parameter):
-        self.driver.execute_script("bot.opt.radiusMult = " + str(parameter))
+        angle, boost = parameter
+        x = 100 * math.sin(angle)
+        y = 100 * math.cos(angle)
+        if_boost = 1 if boost else 0
+        self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
+        self.driver.execute_script(
+            'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
 
     def process(self, result):
         if self.just_dead != 0:
@@ -263,14 +269,14 @@ class Bot(object):
 
 
 class Learning(object):
-    ACTION = [5, 10, 20, 30, 40, 60]
-    DISCOUNT = 0.999
-    EXPLORATION_PROB = 0.2
+    ACTION = [((2 * math.pi / DIMENSION) * i - math.pi, boost) for i in range(DIMENSION) for boost in [True, False]]
+    DISCOUNT = 0.98
+    EXPLORATION_PROB = 0.0
     BATCH_COUNT = 50
 
     @staticmethod
     def _create_predictor():
-        return MLPRegressor(solver="adam", hidden_layer_sizes=(18, 15, 10, 8, 3))
+        return MLPRegressor(solver="adam", hidden_layer_sizes=(80, 40, 10, 5))
 
     def __init__(self, explore = True, predictor_file = None, scaler_file = None, load = False, learning_rate = 0.05, discount = 0.98):
         if not explore:

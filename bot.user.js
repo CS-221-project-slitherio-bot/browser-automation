@@ -458,7 +458,7 @@ var bot = window.bot = (function() {
                     cos * (heading.y - window.snake.yy) + window.snake.yy)
             };
 
-            canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
+            // canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
         },
 
         // Avoid collision point by ang
@@ -512,7 +512,7 @@ var bot = window.bot = (function() {
                     cos * (collisionPoint.yy - window.snake.yy) + window.snake.yy)
             };
 
-            canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
+            // canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
         },
 
         // Sorting by  property 'distance'
@@ -705,7 +705,7 @@ var bot = window.bot = (function() {
                 );
 
                 if (canvasUtil.circleIntersect(headCircle, collisionCircle)) {
-                    window.setAcceleration(bot.defaultAccel);
+                    // window.setAcceleration(bot.defaultAccel);
                     bot.avoidCollisionPoint(bot.collisionPoints[i]);
                     return true;
                 }
@@ -720,9 +720,9 @@ var bot = window.bot = (function() {
 
                     if (canvasUtil.circleIntersect(fullHeadCircle, enemyHeadCircle)) {
                         if (window.snakes[bot.collisionPoints[i].snake].sp > 10) {
-                            window.setAcceleration(1);
+                            // window.setAcceleration(1);
                         } else {
-                            window.setAcceleration(bot.defaultAccel);
+                            // window.setAcceleration(bot.defaultAccel);
                         }
                         bot.avoidHeadPoint({
                             xx: window.snakes[bot.collisionPoints[i].snake].xx,
@@ -732,7 +732,7 @@ var bot = window.bot = (function() {
                     }
                 }
             }
-            window.setAcceleration(bot.defaultAccel);
+            // window.setAcceleration(bot.defaultAccel);
             return false;
         },
 
@@ -897,7 +897,7 @@ var bot = window.bot = (function() {
                     bot.foodTimeout = window.setTimeout(
                         bot.foodTimer, 1000 / bot.opt.targetFps * bot.opt.foodFrames);
                 }
-                window.setAcceleration(bot.foodAccel());
+                // window.setAcceleration(bot.foodAccel());
             }
             if (window.bot.isDead === false && window.snake.alive_amt !== 1) {
                 message = {
@@ -931,7 +931,7 @@ var bot = window.bot = (function() {
                 window.snake !== null && window.snake.alive_amt === 1) {
                 bot.computeFoodGoal();
                 window.goalCoordinates = bot.currentFood;
-                canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
+                // canvasUtil.setMouseCoordinates(canvasUtil.mapToMouse(window.goalCoordinates));
             }
             bot.foodTimeout = undefined;
         }
