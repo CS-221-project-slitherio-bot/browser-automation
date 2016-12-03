@@ -366,6 +366,7 @@ var bot = window.bot = (function() {
         lookForFood: false,
         collisionPoints: [],
         collisionAngles: [],
+        foodClusters: [],
         scores: [],
         foodTimeout: undefined,
         sectorBoxSide: 0,
@@ -378,7 +379,7 @@ var bot = window.bot = (function() {
             // If you wish to customise these, use
             // customBotOptions above
             targetFps: 30,
-            arcSize: Math.PI / 8,
+            arcSize: Math.PI / 16,
             radiusMult: 10,
             foodAccelSize: 60,
             foodAccelAngle: Math.PI / 3,
@@ -798,6 +799,8 @@ var bot = window.bot = (function() {
             foodClusters.forEach(bot.scoreFood);
             foodClusters.sort(bot.sortScore);
 
+            bot.foodClusters = foodClusters;
+
             for (i = 0; i < foodClusters.length; i++) {
                 var aIndex = bot.getAngleIndex(foodClusters[i].a);
                 if (bot.collisionAngles[aIndex] === undefined ||
@@ -902,22 +905,24 @@ var bot = window.bot = (function() {
                     "content": {
                         "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1
                     }
-                }
-                window.message_queue.push(JSON.stringify(message))
+                };
+                window.message_queue.push(JSON.stringify(message));
                 window.bot.isDead = true;
             }
             message = {
                 "type": "status",
                 "content": {
-                    "collusion": bot.collisionPoints,
+                    "collusion": bot.collisionAngles,
+                    "food": bot.foodClusters,
+                    "width": bot.snakeWidth,
                     "length": Math.floor(15 * (fpsls[snake.sct] + snake.fam / fmlts[snake.sct] - 1) - 5) / 1,
                     "snake": {
                         "xx": window.snake.xx,
                         "yy": window.snake.yy
                     }
                 }
-            }
-            window.message_queue.push(JSON.stringify(message))
+            };
+            window.message_queue.push(JSON.stringify(message));
         },
 
         // Timer version of food check
