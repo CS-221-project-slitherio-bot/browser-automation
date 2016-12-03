@@ -243,7 +243,7 @@ class Bot(object):
             # self.debug_print("feature length: " + str(len(flatten_feature)))
             action = self.predict(flatten_feature)
             self.change_parameter(action)
-            if self.just_dead != 0 and self.last_status is not None:
+            if self.just_dead == 0 and self.last_status is not None:
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
                     last_reward = length - last_length
