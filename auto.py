@@ -2,6 +2,7 @@ import random
 from threading import Lock, Thread
 
 from collections import Iterable
+from collections import defaultdict
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from time import sleep, time
@@ -23,6 +24,15 @@ FAR_R = 10000000
 FAR_P = -1
 FAR_SNAKE = -1
 BOT_COUNT = 8
+
+DIMENSION = 16
+CROSS_DIMENSION = 8
+
+BASE = 1.5
+BASE_MAX_POWER = 25
+BASE_MIN_POWER = 15
+
+DEBUG_FEATURE = False
 
 supported_platform = ["chrome", "phantomjs"]
 
@@ -49,7 +59,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 1
+    POOLING_INTERVAL = 0.5
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -67,6 +77,8 @@ class Bot(object):
 
         self.last_status = None
         self.just_dead = 0
+
+        self.last_update = None
 
     def debug_print(self, string):
         if self.debug:
@@ -126,7 +138,12 @@ class Bot(object):
         result = self.driver.execute_script("return window.get_last_in_queue(window.message_queue)")
         for entry in result:
             self.log_print(str(entry))
-        self.debug_print(str(len(result)) + "fps")
+
+        new_update = time()
+        if self.last_update is not None:
+            self.debug_print(str(len(result)) + " updates in " + str(new_update - self.last_update) + "s")
+        self.last_update = new_update
+
         self.process(result)
 
     def change_parameter(self, parameter):
@@ -151,23 +168,79 @@ class Bot(object):
         if last_message_obj is not None and "type" in last_message_obj and last_message_obj["type"] == "status":
             content = last_message_obj["content"]
             length = content["length"]
-            collusion_xy = content["collusion"]
+            width = content["width"]
+            collusion = content["collusion"]
+            food = content["food"]
             snake_xy = content["snake"]
-            def rp(a, b):
-                dx = a["xx"] - b["xx"]
-                dy = a["yy"] - b["yy"]
-                return (dx**2 + dy**2, math.atan2(dy, dx))
-            collusion_rp = [(xy["snake"], rp(xy, snake_xy)) for xy in collusion_xy]
-            sorted_collusion = sorted(collusion_rp + [(FAR_SNAKE, (FAR_R, FAR_P))] * COLLUSION_COUNT,
-                                      key = lambda x: x[1][0])
-            first_n_collusion = sorted_collusion[0: COLLUSION_COUNT]
-            #TODO: retag the snake number of first_n_collusion
-            feature_vector = (first_n_collusion, length)
-            # self.debug_print(str(feature_vector))
-            flatten_feature = list(self.flatten(feature_vector))
+
+            # Normalize functions
+            if DEBUG_FEATURE:
+                def normalize_distance(d):
+                    return d
+
+                def normalize_food(sz):
+                    return sz
+            else:
+                def normalize_distance(d):
+                    return 1.0 / (math.log2(d) + 1.0)
+
+                def normalize_food(sz):
+                    return math.log(sz + 1.0, 10) / 5
+
+            collusion_null = collusion + [None] * (DIMENSION - len(collusion))
+            collusion_nd = [
+                (point["snake"], point["distance"]) if point is not None else (FAR_SNAKE, FAR_R)
+                for point in collusion_null]
+
+            collusion_n_set = [
+                set(filter(
+                    lambda x: x != FAR_SNAKE,
+                    [collusion_nd[j][0] for j in
+                     range(int(DIMENSION * i / CROSS_DIMENSION),
+                           int(DIMENSION * (i + 1) / CROSS_DIMENSION))])
+                )
+                for i in range(CROSS_DIMENSION)]
+            collusion_cross = [[len(collusion_n_set[i] & collusion_n_set[j]) != 0 for j in range(i)] for i in range(CROSS_DIMENSION)]
+
+            collusion_d = [nd[1] for nd in collusion_nd]
+
+            normalized_collusion_d = [normalize_distance(d) for d in collusion_d]
+
+            collusion_feature = (normalized_collusion_d, collusion_cross)
+
+            def which_angle(angle):
+                unit_angle = 2 * math.pi / DIMENSION
+                which = int(math.ceil((angle + math.pi) / unit_angle) - 1)
+                if which < 0 or which >= DIMENSION:
+                    self.debug_print("which_angle error: " + str(angle))
+                return which
+
+            food_rp = defaultdict(int)
+            for food in food:
+                angle = food["a"]
+                distance = food["distance"] / width
+                log_distance = int(math.floor(math.log(distance, BASE)))
+                if log_distance < BASE_MIN_POWER:
+                    normalized_log_distance = BASE_MIN_POWER
+                elif log_distance >= BASE_MAX_POWER:
+                    normalized_log_distance = BASE_MAX_POWER
+                else:
+                    normalized_log_distance = log_distance
+                angle_dimension = which_angle(angle)
+                food_rp[(normalized_log_distance, angle_dimension)] += food["sz"]
+
+            food_feature = [[normalize_food(food_rp[(dist, angle)]) for dist in range(BASE_MIN_POWER, BASE_MAX_POWER)] for angle in range(DIMENSION)]
+
+            self.debug_print("collusion_feature: " + str(collusion_feature))
+
+            self.debug_print("food_feature: " + str(food_feature))
+
+            flatten_feature = list(self.flatten((collusion_feature, food_feature)))
+
+            self.debug_print("feature length: " + str(len(flatten_feature)))
             action = self.predict(flatten_feature)
             self.change_parameter(action)
-            if self.last_status != None:
+            if self.last_status is not None:
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
                     last_reward = length - last_length
