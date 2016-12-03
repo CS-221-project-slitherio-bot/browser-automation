@@ -350,6 +350,6 @@ with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)
             bot.run()
         start_time = time()
         while time() - start_time < COLLECTION_TIMEOUT:
-            bot_scheduler.run(blocking=False)
+            bot_scheduler.run(blocking=True)
         for bot in bots:
             bot.stop()
