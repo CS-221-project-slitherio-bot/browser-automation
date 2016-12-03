@@ -59,7 +59,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 0.5
+    POOLING_INTERVAL = 1.0
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -280,7 +280,7 @@ class Learning(object):
     def _create_predictor():
         return MLPRegressor(solver="adam", hidden_layer_sizes=(80, 40, 10, 5))
 
-    def __init__(self, explore = True, predictor_file = None, load = False, learning_rate = 0.05, discount = 0.98):
+    def __init__(self, explore = True, predictor_file = None, load = False, learning_rate = 0.3, discount = 0.90):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
