@@ -59,7 +59,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 0.5
+    POOLING_INTERVAL = 1.0
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -272,7 +272,7 @@ class Learning(object):
     ACTION = [((2 * math.pi / DIMENSION) * i - math.pi, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
     EXPLORATION_PROB = 0.0
-    BATCH_COUNT = 50
+    BATCH_COUNT = 500
 
     @staticmethod
     def _create_predictor():
