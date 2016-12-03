@@ -150,7 +150,6 @@ class Bot(object):
     def process(self, result):
         if self.just_dead != 0:
             self.just_dead -= 1
-            return
         json_result = [json.loads(message) for message in result]
         dead = False
         last_message_obj = None
@@ -169,7 +168,6 @@ class Bot(object):
             width = content["width"]
             collusion = content["collusion"]
             food = content["food"]
-            snake_xy = content["snake"]
 
             # Normalize functions
             if DEBUG_FEATURE:
@@ -238,7 +236,7 @@ class Bot(object):
             self.debug_print("feature length: " + str(len(flatten_feature)))
             action = self.predict(flatten_feature)
             self.change_parameter(action)
-            if self.last_status is not None:
+            if self.just_dead != 0 and self.last_status is not None:
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
                     last_reward = length - last_length
@@ -246,6 +244,7 @@ class Bot(object):
                 else:
                     last_reward = - last_length
                     self.feedback(last_feature, last_action, last_reward, None)
+                    self.last_status = None
             self.last_status = (flatten_feature, action, length)
 
     def flatten(self, t):
