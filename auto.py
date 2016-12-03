@@ -275,7 +275,7 @@ class Learning(object):
     ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
     EXPLORATION_PROB = 0.0
-    BATCH_COUNT = 50
+    BATCH_COUNT = 500
 
     @staticmethod
     def _create_predictor():
