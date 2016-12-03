@@ -136,8 +136,6 @@ class Bot(object):
         if self.is_running:
             self.schedule_next()
         result = self.driver.execute_script("return window.get_last_in_queue(window.message_queue)")
-        for entry in result:
-            self.log_print(str(entry))
 
         new_update = time()
         if self.last_update is not None:
@@ -261,6 +259,7 @@ class Bot(object):
         return self.predictor.action(feature)
 
     def feedback(self, feature, action, reward, new_state):
+        self.log_print(json.dumps((feature, action, reward, new_state)))
         self.predictor.feedback(feature, action, reward, new_state)
 
 
