@@ -149,7 +149,7 @@ class Bot(object):
         x = 100 * math.sin(angle)
         y = 100 * math.cos(angle)
         if_boost = 1 if boost else 0
-        self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
+        # self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
         self.driver.execute_script(
             'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
 
@@ -233,13 +233,13 @@ class Bot(object):
 
             food_feature = [[normalize_food(food_rp[(dist, angle)]) for dist in range(BASE_MIN_POWER, BASE_MAX_POWER)] for angle in range(DIMENSION)]
 
-            self.debug_print("collusion_feature: " + str(collusion_feature))
-
-            self.debug_print("food_feature: " + str(food_feature))
+            # self.debug_print("collusion_feature: " + str(collusion_feature))
+            #
+            # self.debug_print("food_feature: " + str(food_feature))
 
             flatten_feature = list(self.flatten((collusion_feature, food_feature)))
 
-            self.debug_print("feature length: " + str(len(flatten_feature)))
+            # self.debug_print("feature length: " + str(len(flatten_feature)))
             action = self.predict(flatten_feature)
             self.change_parameter(action)
             if self.just_dead != 0 and self.last_status is not None:
