@@ -379,7 +379,7 @@ var bot = window.bot = (function() {
             // If you wish to customise these, use
             // customBotOptions above
             targetFps: 30,
-            arcSize: Math.PI / 16,
+            arcCount: 16,
             radiusMult: 10,
             foodAccelSize: 60,
             foodAccelAngle: Math.PI / 3,
@@ -522,17 +522,15 @@ var bot = window.bot = (function() {
 
         // get collision angle index, expects angle +/i 0 to Math.PI
         getAngleIndex: function(angle) {
-            const ARCSIZE = bot.opt.arcSize;
-            var index;
+            const ARCSIZE = 2 * Math.PI / bot.opt.arcCount;
+            var index = Math.ceil((angle + Math.PI) / ARCSIZE) - 1
 
-            if (angle < 0) {
-                angle += 2 * Math.PI;
-            }
-
-            index = Math.round(angle * (1 / ARCSIZE));
-
-            if (index === (2 * Math.PI) / ARCSIZE) {
-                return 0;
+            if (index < 0) {
+                console.log(angle);
+                index = 0
+            } else if (index >= bot.opt.arcCount) {
+                console.log(angle);
+                index = bot.opt.arcCount - 1;
             }
             return index;
         },
