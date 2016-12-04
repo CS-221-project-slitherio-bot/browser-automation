@@ -276,7 +276,7 @@ class Bot(object):
 class Learning(object):
     ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
-    EXPLORATION_PROB = 0.5
+    EXPLORATION_PROB = 0.1
     BATCH_COUNT = 100
 
     @staticmethod
