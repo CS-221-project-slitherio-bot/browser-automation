@@ -32,7 +32,7 @@ BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
 
-INPUT_SIZE = 141
+INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + DIMENSION + 1
 
 DEBUG_FEATURE = False
 
@@ -81,6 +81,8 @@ class Bot(object):
         self.just_dead = 0
 
         self.last_update = None
+
+        self.direction = 0;
 
     def debug_print(self, string):
         if self.debug:
@@ -147,10 +149,12 @@ class Bot(object):
         self.process(result)
 
     def change_parameter(self, parameter):
-        angle_dimension, boost = parameter
+        angle_dimension_diff, boost = parameter
+        angle_dimension = (angle_dimension_diff + self.direction) % DIMENSION
+        self.direction = angle_dimension
         angle = (2 * math.pi / DIMENSION) * angle_dimension - math.pi
-        x = 300 * math.sin(angle) + random.uniform(0, 5)
-        y = 300 * math.cos(angle) + random.uniform(0, 5)
+        x = 300 * math.cos(angle) + random.uniform(0, 5)
+        y = 300 * math.sin(angle) + random.uniform(0, 5)
         if_boost = 1 if boost else 0
         # self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
         self.driver.execute_script(
@@ -192,9 +196,10 @@ class Bot(object):
                     return math.log(sz + 1.0, 10) / 5
 
             collusion_null = collusion + [None] * (DIMENSION - len(collusion))
-            collusion_nd = [
+            collusion_nd_original = [
                 (point["snake"], point["distance"]) if point is not None else (FAR_SNAKE, FAR_R)
                 for point in collusion_null]
+            collusion_nd = [collusion_nd_original[(self.direction + i) % DIMENSION] for i in range(DIMENSION)]
 
             collusion_n_set = [
                 set(filter(
@@ -230,7 +235,7 @@ class Bot(object):
                     normalized_log_distance = BASE_MAX_POWER
                 else:
                     normalized_log_distance = log_distance
-                angle_dimension = which_angle(angle)
+                angle_dimension = (which_angle(angle) - self.direction + DIMENSION) % DIMENSION
                 food_rp[(normalized_log_distance, angle_dimension)] += food["sz"]
 
             food_feature = [[normalize_food(food_rp[(dist, angle)]) for dist in range(BASE_MIN_POWER, BASE_MAX_POWER)] for angle in range(DIMENSION)]
@@ -256,6 +261,7 @@ class Bot(object):
                     self.feedback(last_feature, last_action, last_reward, None)
                     self.debug_print("Game end, final length: " + str(last_length))
                     self.last_status = None
+                    self.direction = 0
             self.last_status = (flatten_feature, action, length)
 
     def flatten(self, t):
