@@ -284,6 +284,7 @@ class Bot(object):
 
     def feedback(self, feature, action, reward, new_state):
         self.log_print(json.dumps((feature, action, reward, new_state)))
+        self.debug_print("reward: %d" % reward)
         self.predictor.feedback(feature, action, reward, new_state)
 
 
