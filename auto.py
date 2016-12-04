@@ -363,6 +363,7 @@ class Learning(object):
             newQ = reward
             q_action = [0.0] * len(self.ACTION)
             q_action[index] = newQ
+        print("feedback: %d, %d, %f" % (index, reward, q_action[index]))
         print(len(state))
         self.sample += [(state, q_action)]
         print("sample count: %d\n" % len(self.sample))
