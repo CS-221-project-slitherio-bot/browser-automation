@@ -234,7 +234,7 @@ class Bot(object):
             for food in food:
                 angle = food["a"]
                 distance = food["distance"] / width
-                log_distance = int(math.floor(math.log(distance, BASE)))
+                log_distance = int(math.floor(math.log(distance + 1.0, BASE)))
                 if log_distance < BASE_MIN_POWER:
                     normalized_log_distance = BASE_MIN_POWER
                 elif log_distance >= BASE_MAX_POWER:
