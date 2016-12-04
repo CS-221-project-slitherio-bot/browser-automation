@@ -305,7 +305,7 @@ class Learning(object):
         model.compile(loss='mse', optimizer=rms)
         return model
 
-    def __init__(self, explore = True, model_file = None, load = False, learning_rate = 0.05, discount = 0.98):
+    def __init__(self, explore = True, model_file = None, load = False, learning_rate = 0.25, discount = 0.98):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
