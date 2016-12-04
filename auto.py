@@ -32,7 +32,7 @@ BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
 
-INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER)
+INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + 1
 
 DEBUG_FEATURE = False
 
@@ -188,12 +188,18 @@ class Bot(object):
 
                 def normalize_food(sz):
                     return sz
+
+                def normalize_length(length):
+                    return length
             else:
                 def normalize_distance(d):
                     return 1.0 / (math.log2(d + 1.0) + 1.0)
 
                 def normalize_food(sz):
                     return math.log(sz + 1.0, 10) / 5
+
+                def normalize_length(length):
+                    return math.log(length + 1.0, 10) / 5
 
             collusion_null = collusion + [None] * (DIMENSION - len(collusion))
             collusion_nd_original = [
@@ -244,7 +250,9 @@ class Bot(object):
             #
             # self.debug_print("food_feature: " + str(food_feature))
 
-            flatten_feature = list(self.flatten((collusion_feature, food_feature)))
+            length_feature = normalize_length(length)
+
+            flatten_feature = list(self.flatten((collusion_feature, food_feature, length_feature)))
 
             # self.debug_print("feature length: " + str(len(flatten_feature)))
             predict_result = self.predict(flatten_feature)
