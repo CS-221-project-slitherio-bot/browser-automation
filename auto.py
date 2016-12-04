@@ -16,6 +16,8 @@ from keras.optimizers import RMSprop
 import numpy as np
 from copy import copy
 
+np.set_printoptions(threshold=np.nan)
+
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60 * 60 * 10
 
