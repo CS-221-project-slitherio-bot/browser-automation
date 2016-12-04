@@ -259,7 +259,7 @@ class Bot(object):
                     last_reward = length - last_length
                     self.feedback(last_feature, last_action, last_reward, flatten_feature)
                 else:
-                    last_reward = - 2 * last_length
+                    last_reward = - last_length
                     self.feedback(last_feature, last_action, last_reward, None)
                     self.debug_print("Game end, final length: " + str(last_length))
                     self.last_status = None
@@ -359,6 +359,7 @@ class Learning(object):
             newQ = reward
             q_action = [0.0] * len(self.ACTION)
             q_action[index] = newQ
+        print("feedback: %d, %d, %f" % (index, reward, q_action[index]))
         print(len(state))
         self.sample += [(state, q_action)]
         print("sample count: %d\n" % len(self.sample))
@@ -390,7 +391,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, model_file="predictor.model", load=True)
+bot_predictor = Learning(explore=True, model_file="predictor.model", load=False)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
