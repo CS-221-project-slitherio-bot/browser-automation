@@ -289,7 +289,7 @@ class Bot(object):
 
 
 class Learning(object):
-    ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
+    ACTION = [(i, boost) for boost in [False, True] for i in range(DIMENSION)]
     DISCOUNT = 0.98
     EXPLORATION_PROB = 0.05
     BATCH_COUNT = 100
@@ -335,7 +335,7 @@ class Learning(object):
     @staticmethod
     def action_to_index(action):
         angle_dimension, boost = action
-        index = angle_dimension + DIMENSION if boost else 0
+        index = angle_dimension + (DIMENSION if boost else 0)
         return index
 
     def action(self, state):
