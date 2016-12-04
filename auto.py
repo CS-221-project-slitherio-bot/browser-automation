@@ -265,7 +265,7 @@ class Bot(object):
                     last_reward = length - last_length
                     self.feedback(last_feature, last_action, last_reward, flatten_feature)
                 else:
-                    last_reward = - 2 * last_length
+                    last_reward = - last_length
                     self.feedback(last_feature, last_action, last_reward, None)
                     self.debug_print("Game end, final length: " + str(last_length))
                     self.last_status = None
