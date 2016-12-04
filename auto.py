@@ -230,7 +230,7 @@ class Bot(object):
             for food in food:
                 angle = food["a"]
                 distance = food["distance"] / width
-                log_distance = int(math.floor(math.log(distance, BASE)))
+                log_distance = int(math.floor(math.log(distance + 1.0, BASE)))
                 if log_distance < BASE_MIN_POWER:
                     normalized_log_distance = BASE_MIN_POWER
                 elif log_distance >= BASE_MAX_POWER:
@@ -338,11 +338,13 @@ class Learning(object):
         else:
             result = self.q_action(state)
             index = np.argmax(result)
+            print("choose: %d" % index)
             value = np.max(result)
             return value, self.ACTION[index]
 
     def feedback(self, state, action, reward, new_state):
         index = self.action_to_index(action)
+        print("feedback: %d, %d" % (index, reward))
         if self.trained:
             q_action = self.q_action(state)
             if new_state is None:
