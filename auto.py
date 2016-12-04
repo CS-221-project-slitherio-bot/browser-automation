@@ -278,6 +278,7 @@ class Bot(object):
 
     def feedback(self, feature, action, reward, new_state):
         self.log_print(json.dumps((feature, action, reward, new_state)))
+        self.debug_print("reward: %d" % reward)
         self.predictor.feedback(feature, action, reward, new_state)
 
 
@@ -387,7 +388,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, model_file="predictor.model", load=False)
+bot_predictor = Learning(explore=True, model_file="predictor.model", load=True)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
