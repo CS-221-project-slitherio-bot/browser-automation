@@ -292,11 +292,11 @@ class Learning(object):
         model = Sequential()
         model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
         model.add(Activation('relu'))
-        # model.add(Dropout(0.2)) I'm not using dropout, but maybe you wanna give it a try?
+        model.add(Dropout(0.2)) # I'm not using dropout, but maybe you wanna give it a try?
 
         model.add(Dense(150, init='lecun_uniform'))
         model.add(Activation('relu'))
-        # model.add(Dropout(0.2))
+        model.add(Dropout(0.2))
 
         model.add(Dense(len(self.ACTION), init='lecun_uniform'))
         model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
