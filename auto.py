@@ -149,8 +149,8 @@ class Bot(object):
     def change_parameter(self, parameter):
         angle_dimension, boost = parameter
         angle = (2 * math.pi / DIMENSION) * angle_dimension - math.pi
-        x = 100 * math.sin(angle)
-        y = 100 * math.cos(angle)
+        x = 300 * math.sin(angle) + random.uniform(0, 5)
+        y = 300 * math.cos(angle) + random.uniform(0, 5)
         if_boost = 1 if boost else 0
         # self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
         self.driver.execute_script(
@@ -276,7 +276,7 @@ class Bot(object):
 class Learning(object):
     ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
-    EXPLORATION_PROB = 0.0
+    EXPLORATION_PROB = 0.05
     BATCH_COUNT = 100
 
     @staticmethod
