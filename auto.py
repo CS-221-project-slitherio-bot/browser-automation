@@ -32,7 +32,7 @@ BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
 
-INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + DIMENSION + 1
+INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER)
 
 DEBUG_FEATURE = False
 
@@ -82,7 +82,7 @@ class Bot(object):
 
         self.last_update = None
 
-        self.direction = 0;
+        self.direction = 0
 
     def debug_print(self, string):
         if self.debug:
@@ -285,8 +285,7 @@ class Learning(object):
     EXPLORATION_PROB = 0.05
     BATCH_COUNT = 100
 
-    @staticmethod
-    def _create_model():
+    def _create_model(self):
         model = Sequential()
         model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
         model.add(Activation('relu'))
@@ -296,7 +295,7 @@ class Learning(object):
         model.add(Activation('relu'))
         # model.add(Dropout(0.2))
 
-        model.add(Dense(1, init='lecun_uniform'))
+        model.add(Dense(len(self.ACTION), init='lecun_uniform'))
         model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
 
         rms = RMSprop()
@@ -319,37 +318,44 @@ class Learning(object):
             self.model = self._create_model()
             self.trained = False
 
-    def q(self, state, action):
-        X = state + self.action_to_array(action)
+    def q_action(self, state):
+        X = state
         X = np.array(X).reshape(1, -1)
         return self.model.predict(X, batch_size=1)[0]
 
     @staticmethod
-    def action_to_array(action):
-        feature = [0.0] * DIMENSION + [0.0]
+    def action_to_index(action):
         angle_dimension, boost = action
-        feature[angle_dimension] = 1.0
-        feature[-1] = 1.0 if boost else 0.0
-        return feature
+        index = angle_dimension + DIMENSION if boost else 0
+        return index
 
     def action(self, state):
         if random.random() < self.EXPLORATION_PROB or self.trained == False:
             return (0, random.choice(self.ACTION))
         else:
-            return max((self.q(state, action), action) for action in self.ACTION)
+            result = self.q_action(state)
+            index = np.argmax(result)
+            value = np.max(result)
+            return value, self.ACTION[index]
 
     def feedback(self, state, action, reward, new_state):
+        index = self.action_to_index(action)
         if self.trained:
+            q_action = self.q_action(state)
             if new_state is None:
                 newValue = 0
             else:
-                newValue, _ = max((self.q(new_state, action), action) for action in self.ACTION)
-            newQ = (1 - self.learning_rate) * self.q(state, action) + \
+                newValue = np.max(self.q_action(new_state))
+            oldQ = q_action[index]
+            newQ = (1 - self.learning_rate) * oldQ + \
                    self.learning_rate * (reward + self.discount * newValue)
+            q_action[index] = newQ
         else:
             newQ = reward
-        print(len(state + self.action_to_array(action)))
-        self.sample += [(state + self.action_to_array(action), newQ)]
+            q_action = [0.0] * len(self.ACTION)
+            q_action[index] = newQ
+        print(len(state))
+        self.sample += [(state, q_action)]
         print("sample count: %d\n" % len(self.sample))
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
@@ -362,7 +368,7 @@ class Learning(object):
         X = [sample[0] for sample in training_sample]
         Y = [sample[1] for sample in training_sample]
         X = np.array(X)
-        Y = np.array(Y).reshape(-1, 1)
+        Y = np.array(Y)
         print(Y)
         temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=1, verbose=1)
         self.model = temp_predictor
