@@ -276,7 +276,7 @@ class Bot(object):
 class Learning(object):
     ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
-    EXPLORATION_PROB = 0.05
+    EXPLORATION_PROB = 0.5
     BATCH_COUNT = 100
 
     @staticmethod
@@ -373,7 +373,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, model_file="predictor.model", load=False)
+bot_predictor = Learning(explore=True, model_file="predictor.model", load=True)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
