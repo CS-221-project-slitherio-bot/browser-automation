@@ -10,11 +10,11 @@ from sched import scheduler
 import sys
 import json
 import math
-from sklearn.neural_network import MLPRegressor
-from sklearn.externals import joblib
-from sklearn.preprocessing import StandardScaler
-import sklearn
+from keras.models import Sequential, load_model
+from keras.layers.core import Dense, Dropout, Activation
+from keras.optimizers import RMSprop
 import numpy as np
+from copy import copy
 
 MAX_ENTRY = 300
 COLLECTION_TIMEOUT = 60 * 60 * 10
@@ -31,6 +31,8 @@ CROSS_DIMENSION = 8
 BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
+
+INPUT_SIZE = 141
 
 DEBUG_FEATURE = False
 
@@ -59,7 +61,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 0.5
+    POOLING_INTERVAL = 1.0
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -275,32 +277,46 @@ class Learning(object):
     ACTION = [(i, boost) for i in range(DIMENSION) for boost in [True, False]]
     DISCOUNT = 0.98
     EXPLORATION_PROB = 0.0
-    BATCH_COUNT = 50
+    BATCH_COUNT = 100
 
     @staticmethod
-    def _create_predictor():
-        return MLPRegressor(solver="adam", hidden_layer_sizes=(80, 40, 10, 5))
+    def _create_model():
+        model = Sequential()
+        model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
+        model.add(Activation('relu'))
+        # model.add(Dropout(0.2)) I'm not using dropout, but maybe you wanna give it a try?
 
-    def __init__(self, explore = True, predictor_file = None, load = False, learning_rate = 0.05, discount = 0.98):
+        model.add(Dense(150, init='lecun_uniform'))
+        model.add(Activation('relu'))
+        # model.add(Dropout(0.2))
+
+        model.add(Dense(1, init='lecun_uniform'))
+        model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
+
+        rms = RMSprop()
+        model.compile(loss='mse', optimizer=rms)
+        return model
+
+    def __init__(self, explore = True, model_file = None, load = False, learning_rate = 0.05, discount = 0.98):
         if not explore:
             self.EXPLORATION_PROB = 0
         self.lock = Lock()
         self.sample = []
         self.trained = False
-        self.predictor_file = predictor_file
+        self.predictor_file = model_file
         self.learning_rate = learning_rate
         self.discount = discount
         if load:
-            self.predictor = joblib.load(predictor_file)
+            self.model = load_model(model_file)
             self.trained = True
         else:
-            self.predictor = self._create_predictor()
+            self.model = self._create_model()
             self.trained = False
 
     def q(self, state, action):
         X = state + self.action_to_array(action)
         X = np.array(X).reshape(1, -1)
-        return self.predictor.predict(X)[0]
+        return self.model.predict(X, batch_size=1)[0]
 
     @staticmethod
     def action_to_array(action):
@@ -328,22 +344,23 @@ class Learning(object):
             newQ = reward
         print(len(state + self.action_to_array(action)))
         self.sample += [(state + self.action_to_array(action), newQ)]
+        print("sample count: %d\n" % len(self.sample))
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
             self.sample = []
-            Thread(target=self.train, name="training thread", kwargs={"training_sample": training_sample}).start()
+            Thread(target=self.train, name="training thread", kwargs={"training_sample": training_sample}).run()
 
     def train(self, training_sample):
         print("start training!")
-        temp_predictor = sklearn.clone(self.predictor)
+        temp_predictor = self.model
         X = [sample[0] for sample in training_sample]
         Y = [sample[1] for sample in training_sample]
         X = np.array(X)
-        Y = np.array(Y)
+        Y = np.array(Y).reshape(-1, 1)
         print(Y)
-        temp_predictor.partial_fit(X, Y)
-        self.predictor = temp_predictor
-        joblib.dump(self.predictor, self.predictor_file)
+        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=1, verbose=1)
+        self.model = temp_predictor
+        self.model.save(self.predictor_file)
         self.trained = True
         print("training complete!")
 
@@ -356,7 +373,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, predictor_file="predictor.model", load=False)
+bot_predictor = Learning(explore=True, model_file="predictor.model", load=False)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
