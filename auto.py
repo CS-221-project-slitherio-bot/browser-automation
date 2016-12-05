@@ -297,7 +297,7 @@ class Learning(object):
     def _create_model(self):
         model = Sequential()
 
-        model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
+        model.add(Dense(50, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
         model.add(Activation('relu'))
 
         model.add(Dense(len(self.ACTION), init='lecun_uniform'))
