@@ -32,7 +32,7 @@ BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
 
-INPUT_SIZE = DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + 1
+INPUT_SIZE = DIMENSION + DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + 1
 
 DEBUG_FEATURE = False
 
@@ -202,26 +202,28 @@ class Bot(object):
                     return math.log(length + 1.0, 10) / 5
 
             collusion_null = collusion + [None] * (DIMENSION - len(collusion))
-            collusion_nd_original = [
-                (point["snake"], point["distance"]) if point is not None else (FAR_SNAKE, FAR_R)
+            collusion_nd_head_original = [
+                (point["snake"], point["distance"], point["head"]) if point is not None else (FAR_SNAKE, FAR_R, False)
                 for point in collusion_null]
-            collusion_nd = [collusion_nd_original[(self.direction + i) % DIMENSION] for i in range(DIMENSION)]
+            collusion_nd_head = [collusion_nd_head_original[(self.direction + i) % DIMENSION] for i in range(DIMENSION)]
 
             collusion_n_set = [
                 set(filter(
                     lambda x: x != FAR_SNAKE,
-                    [collusion_nd[j][0] for j in
+                    [collusion_nd_head[j][0] for j in
                      range(int(DIMENSION * i / CROSS_DIMENSION),
                            int(DIMENSION * (i + 1) / CROSS_DIMENSION))])
                 )
                 for i in range(CROSS_DIMENSION)]
             collusion_cross = [[len(collusion_n_set[i] & collusion_n_set[j]) != 0 for j in range(i)] for i in range(CROSS_DIMENSION)]
 
-            collusion_d = [nd[1] for nd in collusion_nd]
+            collusion_d = [nd[1] for nd in collusion_nd_head]
+
+            collusion_head = [nd[2] for nd in collusion_nd_head]
 
             normalized_collusion_d = [normalize_distance(d) for d in collusion_d]
 
-            collusion_feature = (normalized_collusion_d, collusion_cross)
+            collusion_feature = (normalized_collusion_d, collusion_cross, collusion_head)
 
             def which_angle(angle):
                 unit_angle = 2 * math.pi / DIMENSION
@@ -234,7 +236,7 @@ class Bot(object):
             for food in food:
                 angle = food["a"]
                 distance = food["distance"] / width
-                log_distance = int(math.floor(math.log(distance, BASE)))
+                log_distance = int(math.floor(math.log(distance + 1.0, BASE)))
                 if log_distance < BASE_MIN_POWER:
                     normalized_log_distance = BASE_MIN_POWER
                 elif log_distance >= BASE_MAX_POWER:

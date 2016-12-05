@@ -536,7 +536,7 @@ var bot = window.bot = (function() {
         },
 
         // Add to collisionAngles if distance is closer
-        addCollisionAngle: function(sp) {
+        addCollisionAngle: function(sp, isHead) {
             var ang = canvasUtil.fastAtan2(
                 Math.round(sp.yy - window.snake.yy),
                 Math.round(sp.xx - window.snake.xx));
@@ -551,9 +551,13 @@ var bot = window.bot = (function() {
                     y: Math.round(sp.yy),
                     ang: ang,
                     snake: sp.snake,
-                    distance: actualDistance
+                    distance: actualDistance,
+                    head: isHead
                 };
             } else if (bot.collisionAngles[aIndex].distance > sp.distance) {
+                if (bot.collisionAngles[aIndex].snake != sp.snake) {
+                    bot.collisionAngles[aIndex].head = isHead;
+                }
                 bot.collisionAngles[aIndex].x = Math.round(sp.xx);
                 bot.collisionAngles[aIndex].y = Math.round(sp.yy);
                 bot.collisionAngles[aIndex].ang = ang;
@@ -582,7 +586,7 @@ var bot = window.bot = (function() {
                         radius: bot.getSnakeWidth(window.snakes[snake].sc) / 2
                     };
                     canvasUtil.getDistance2FromSnake(scPoint);
-                    bot.addCollisionAngle(scPoint);
+                    bot.addCollisionAngle(scPoint, true);
                     if (window.visualDebugging) {
                         canvasUtil.drawCircle(canvasUtil.circle(
                                 scPoint.xx,
@@ -614,7 +618,7 @@ var bot = window.bot = (function() {
                             }
 
                             canvasUtil.getDistance2FromSnake(collisionPoint);
-                            bot.addCollisionAngle(collisionPoint);
+                            bot.addCollisionAngle(collisionPoint, false);
 
                             if (scPoint === undefined ||
                                 scPoint.distance > collisionPoint.distance) {
@@ -648,7 +652,7 @@ var bot = window.bot = (function() {
                 };
                 canvasUtil.getDistance2FromSnake(scPoint);
                 bot.collisionPoints.push(scPoint);
-                bot.addCollisionAngle(scPoint);
+                bot.addCollisionAngle(scPoint, false);
                 if (window.visualDebugging) {
                     canvasUtil.drawCircle(canvasUtil.circle(
                         scPoint.xx,
