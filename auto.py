@@ -376,7 +376,7 @@ class Learning(object):
         X = np.array(X)
         Y = np.array(Y)
         print(Y)
-        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=1, verbose=1)
+        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=10, verbose=1)
         self.model = temp_predictor
         self.model.save(self.predictor_file)
         self.trained = True
@@ -391,7 +391,7 @@ class WithList(list):
             item.__exit__(exc_type, exc_val, exc_tb)
 
 bot_scheduler = scheduler(time, sleep)
-bot_predictor = Learning(explore=True, model_file="predictor.model", load=False)
+bot_predictor = Learning(explore=True, model_file="predictor.model", load=True)
 
 with WithList([open("./log/bot_"+ str(i) +".log", "w") for i in range(BOT_COUNT)]) as files:
     with WithList([Bot(bot_scheduler, bot_predictor, files[i], sys.stdout, "Bot " + str(i)) for i in range(BOT_COUNT)]) as bots:
