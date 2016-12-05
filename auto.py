@@ -297,7 +297,10 @@ class Learning(object):
     def _create_model(self):
         model = Sequential()
 
-        model.add(Dense(len(self.ACTION), init='lecun_uniform', input_shape=(INPUT_SIZE,)))
+        model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
+        model.add(Activation('relu'))
+
+        model.add(Dense(len(self.ACTION), init='lecun_uniform'))
         model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
 
         rms = RMSprop()
