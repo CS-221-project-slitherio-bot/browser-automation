@@ -380,7 +380,7 @@ class Learning(object):
         X = np.array(X)
         Y = np.array(Y)
         print(Y)
-        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=1, verbose=1)
+        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=100, verbose=1)
         self.model = temp_predictor
         self.model.save(self.predictor_file)
         self.trained = True
