@@ -555,9 +555,7 @@ var bot = window.bot = (function() {
                     head: isHead
                 };
             } else if (bot.collisionAngles[aIndex].distance > sp.distance) {
-                if (bot.collisionAngles[aIndex].snake != sp.snake) {
-                    bot.collisionAngles[aIndex].head = isHead;
-                }
+                bot.collisionAngles[aIndex].head = isHead;
                 bot.collisionAngles[aIndex].x = Math.round(sp.xx);
                 bot.collisionAngles[aIndex].y = Math.round(sp.yy);
                 bot.collisionAngles[aIndex].ang = ang;
