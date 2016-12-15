@@ -3,6 +3,8 @@ from threading import Lock, Thread
 
 from collections import Iterable
 from collections import defaultdict
+
+from keras.layers import Convolution2D
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from time import sleep, time
@@ -11,11 +13,13 @@ import sys
 import json
 import math
 from keras.models import Sequential, load_model
-from keras.layers.core import Dense, Dropout, Activation
-from keras.optimizers import RMSprop
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.optimizers import RMSprop, Adam
 import numpy as np
 from io import BytesIO
 from PIL import Image
+import tensorflow as tf
+from keras import backend as K
 from copy import copy
 
 MAX_ENTRY = 300
@@ -37,8 +41,8 @@ BASE_MIN_POWER = 9
 WINDOW_HEIGHT = 400
 WINDOW_WIDTH = 400
 
-RESIZE_HEIGHT = 80
-RESIZE_WIDTH = 80
+RESIZE_HEIGHT = 100
+RESIZE_WIDTH = 100
 
 CHROME_BAR_HEIGHT = 74
 
@@ -71,7 +75,7 @@ def open_driver(platform_id):
 
 class Bot(object):
     """Slither.io Bot"""
-    POOLING_INTERVAL = 1.0
+    POOLING_INTERVAL = 0.5
     START_SCRIPT = "window.play_btn.btnf.click(); window.autoRespawn = true;"
     END_SCRIPT = "window.autoRespawn = false; window.userInterface.quit();"
 
@@ -91,6 +95,8 @@ class Bot(object):
         self.just_dead = 0
 
         self.last_update = None
+
+        self.history_frame = np.zeros(shape=(4, RESIZE_WIDTH, RESIZE_WIDTH))
 
         self.direction = 0
 
@@ -163,12 +169,11 @@ class Bot(object):
         self.process(result)
 
     def change_parameter(self, parameter):
-        angle_dimension_diff, boost = parameter
-        angle_dimension = (angle_dimension_diff + self.direction) % DIMENSION
+        angle_dimension, boost = parameter
         self.direction = angle_dimension
         angle = (2 * math.pi / DIMENSION) * angle_dimension - math.pi
-        x = 300 * math.cos(angle) + random.uniform(0, 5)
-        y = 300 * math.sin(angle) + random.uniform(0, 5)
+        x = 50 * math.cos(angle) + random.uniform(0, 5)
+        y = 50 * math.sin(angle) + random.uniform(0, 5)
         if_boost = 1 if boost else 0
         # self.debug_print("executing script: " + 'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
         self.driver.execute_script(
@@ -195,87 +200,13 @@ class Bot(object):
         if last_message_obj is not None and "type" in last_message_obj and last_message_obj["type"] == "status":
             content = last_message_obj["content"]
             length = content["length"]
-            width = content["width"]
-            collusion = content["collusion"]
-            food = content["food"]
 
-            # Normalize functions
-            if DEBUG_FEATURE:
-                def normalize_distance(d):
-                    return d
-
-                def normalize_food(sz):
-                    return sz
-
-                def normalize_length(length):
-                    return length
-            else:
-                def normalize_distance(d):
-                    return 1.0 / (math.log2(d + 1.0) + 1.0)
-
-                def normalize_food(sz):
-                    return math.log(sz + 1.0, 10) / 5
-
-                def normalize_length(length):
-                    return math.log(length + 1.0, 10) / 5
-
-            collusion_null = collusion + [None] * (DIMENSION - len(collusion))
-            collusion_nd_head_original = [
-                (point["snake"], point["distance"], point["head"]) if point is not None else (FAR_SNAKE, FAR_R, False)
-                for point in collusion_null]
-            collusion_nd_head = [collusion_nd_head_original[(self.direction + i) % DIMENSION] for i in range(DIMENSION)]
-
-            collusion_n_set = [
-                set(filter(
-                    lambda x: x != FAR_SNAKE,
-                    [collusion_nd_head[j][0] for j in
-                     range(int(DIMENSION * i / CROSS_DIMENSION),
-                           int(DIMENSION * (i + 1) / CROSS_DIMENSION))])
-                )
-                for i in range(CROSS_DIMENSION)]
-            collusion_cross = [[len(collusion_n_set[i] & collusion_n_set[j]) != 0 for j in range(i)] for i in range(CROSS_DIMENSION)]
-
-            collusion_d = [nd[1] for nd in collusion_nd_head]
-
-            collusion_head = [nd[2] for nd in collusion_nd_head]
-
-            normalized_collusion_d = [normalize_distance(d) for d in collusion_d]
-
-            collusion_feature = (normalized_collusion_d, collusion_cross, collusion_head)
-
-            def which_angle(angle):
-                unit_angle = 2 * math.pi / DIMENSION
-                which = int(math.ceil((angle + math.pi) / unit_angle) - 1)
-                if which < 0 or which >= DIMENSION:
-                    self.debug_print("which_angle error: " + str(angle))
-                return which
-
-            food_rp = defaultdict(int)
-            for food in food:
-                angle = food["a"]
-                distance = food["distance"] / width
-                log_distance = int(math.floor(math.log(distance + 1.0, BASE)))
-                if log_distance < BASE_MIN_POWER:
-                    normalized_log_distance = BASE_MIN_POWER
-                elif log_distance >= BASE_MAX_POWER:
-                    normalized_log_distance = BASE_MAX_POWER
-                else:
-                    normalized_log_distance = log_distance
-                angle_dimension = (which_angle(angle) - self.direction + DIMENSION) % DIMENSION
-                food_rp[(normalized_log_distance, angle_dimension)] += food["sz"]
-
-            food_feature = [[normalize_food(food_rp[(dist, angle)]) for dist in range(BASE_MIN_POWER, BASE_MAX_POWER)] for angle in range(DIMENSION)]
-
-            # self.debug_print("collusion_feature: " + str(collusion_feature))
-            #
-            # self.debug_print("food_feature: " + str(food_feature))
-
-            length_feature = normalize_length(length)
-
-            flatten_feature = list(self.flatten((collusion_feature, food_feature, length_feature)))
-
-            # self.debug_print("feature length: " + str(len(flatten_feature)))
-            predict_result = self.predict(flatten_feature)
+            image_feature = np.asarray(image)
+            np.delete(self.history_frame, 0)
+            np.append(self.history_frame, image_feature)
+            image_history_feature = self.history_frame
+            self.debug_print("image feature shape: " + str(image_history_feature.shape))
+            predict_result = self.predict(image_history_feature)
             action = predict_result[1]
             self.debug_print("weight: %f, action: %s" % (predict_result[0], str(predict_result[1])))
             self.change_parameter(action)
@@ -283,14 +214,15 @@ class Bot(object):
                 last_feature, last_action, last_length = self.last_status
                 if not dead:
                     last_reward = length - last_length
-                    self.feedback(last_feature, last_action, last_reward, flatten_feature)
+                    self.feedback(last_feature, last_action, last_reward, image_history_feature)
                 else:
                     last_reward = - 1000
                     self.feedback(last_feature, last_action, last_reward, None)
                     self.debug_print("Game end, final length: " + str(last_length))
                     self.last_status = None
+                    self.history_frame = np.zeros(shape=(4, RESIZE_WIDTH, RESIZE_WIDTH))
                     self.direction = 0
-            self.last_status = (flatten_feature, action, length)
+            self.last_status = (image_history_feature, action, length)
 
     def flatten(self, t):
         for t1 in t:
@@ -303,7 +235,7 @@ class Bot(object):
         return self.predictor.action(feature)
 
     def feedback(self, feature, action, reward, new_state):
-        self.log_print(json.dumps((feature, action, reward, new_state)))
+        # self.log_print(json.dumps((feature, action, reward, new_state)))
         self.predictor.feedback(feature, action, reward, new_state)
 
 
@@ -315,19 +247,19 @@ class Learning(object):
 
     def _create_model(self):
         model = Sequential()
-        model.add(Dense(250, init='lecun_uniform', input_shape=(INPUT_SIZE,)))
+        model.add(Convolution2D(32, 8, 8, subsample=(4, 4), input_shape=(4, RESIZE_WIDTH, RESIZE_HEIGHT), dim_ordering="th"))
         model.add(Activation('relu'))
-        # model.add(Dropout(0.2)) I'm not using dropout, but maybe you wanna give it a try?
-
-        model.add(Dense(150, init='lecun_uniform'))
+        model.add(Convolution2D(64, 4, 4, subsample=(2, 2)))
         model.add(Activation('relu'))
-        # model.add(Dropout(0.2))
+        model.add(Convolution2D(64, 3, 3, subsample=(1, 1)))
+        model.add(Activation('relu'))
+        model.add(Flatten())
+        model.add(Dense(512))
+        model.add(Activation('relu'))
+        model.add(Dense(len(self.ACTION)))
 
-        model.add(Dense(len(self.ACTION), init='lecun_uniform'))
-        model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
-
-        rms = RMSprop()
-        model.compile(loss='mse', optimizer=rms)
+        adam = Adam(lr=1e-6)
+        model.compile(loss='mse', optimizer=adam)
         return model
 
     def __init__(self, explore = True, model_file = None, load = False, learning_rate = 0.05, discount = 0.98):
@@ -339,16 +271,21 @@ class Learning(object):
         self.predictor_file = model_file
         self.learning_rate = learning_rate
         self.discount = discount
+        self.model = None
         if load:
-            self.model = load_model(model_file)
+            self.models= [load_model(model_file) for i in range(2)]
+            self.select_model(0)
             self.trained = True
         else:
-            self.model = self._create_model()
+            self.models = [self._create_model(), self._create_model()]
+            self.select_model(0)
             self.trained = False
+        self.sess = tf.Session()
+        K.set_session(self.sess)
 
     def q_action(self, state):
         X = state
-        X = np.array(X).reshape(1, -1)
+        X = X.reshape(1, X.shape[0], X.shape[1], X.shape[2])
         return self.model.predict(X, batch_size=1)[0]
 
     @staticmethod
@@ -388,21 +325,35 @@ class Learning(object):
         if len(self.sample) > self.BATCH_COUNT:
             training_sample = self.sample
             self.sample = []
-            Thread(target=self.train, name="training thread", kwargs={"training_sample": training_sample}).run()
+            Thread(target=self.train, name="training thread", kwargs={"training_sample": training_sample}).start()
 
     def train(self, training_sample):
-        print("start training!")
-        temp_predictor = self.model
-        X = [sample[0] for sample in training_sample]
-        Y = [sample[1] for sample in training_sample]
-        X = np.array(X)
-        Y = np.array(Y)
-        print(Y)
-        temp_predictor.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=100, verbose=1)
-        self.model = temp_predictor
-        self.model.save(self.predictor_file)
-        self.trained = True
-        print("training complete!")
+        if self.lock.acquire(False):
+            with self.sess.graph.as_default():
+                try:
+                    print("start training!")
+                    if self.trained:
+                        self.model.save(self.predictor_file)
+                    training_model = self.models[1]
+                    X = [sample[0] for sample in training_sample]
+                    Y = [sample[1] for sample in training_sample]
+                    X = np.array(X)
+                    Y = np.array(Y)
+                    print(X.shape)
+                    print(Y)
+                    history = training_model.fit(X, Y, batch_size=self.BATCH_COUNT, nb_epoch=100, verbose=0)
+                    print(history)
+                    self.model = self.models[1]
+                    self.models[0].set_weights(self.models[1].get_weights())
+                    self.model = self.models[0]
+                    self.trained = True
+                    print("training complete!")
+                except:
+                    raise
+                finally:
+                    self.lock.release()
+        else:
+            print("last training is not complete, abort.")
 
 class WithList(list):
     def __enter__(self):
