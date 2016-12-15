@@ -32,7 +32,7 @@ Changes you make here will be kept between script versions
 */
 var customBotOptions = {
     // target fps
-    targetFps: 10,
+    // targetFps: 10,
     // size of arc for collisionAngles
     // arcSize: Math.PI / 8,
     // radius multiple for circle intersects
@@ -976,8 +976,9 @@ var userInterface = window.userInterface = (function() {
             botOverlay.style.fontSize = '14px';
             botOverlay.style.padding = '5px';
             botOverlay.style.borderRadius = '5px';
+            botOverlay.style.visibility = 'hidden';
             botOverlay.className = 'nsi';
-            document.body.appendChild(botOverlay);
+            // document.body.appendChild(botOverlay);
 
             var serverOverlay = document.createElement('div');
             serverOverlay.style.position = 'fixed';
@@ -989,8 +990,10 @@ var userInterface = window.userInterface = (function() {
             serverOverlay.style.fontFamily = 'Consolas, Verdana';
             serverOverlay.style.zIndex = 999;
             serverOverlay.style.fontSize = '14px';
+            serverOverlay.style.visibility = 'hidden';
             serverOverlay.className = 'nsi';
-            document.body.appendChild(serverOverlay);
+
+            // document.body.appendChild(serverOverlay);
 
             var prefOverlay = document.createElement('div');
             prefOverlay.style.position = 'fixed';
@@ -1005,8 +1008,9 @@ var userInterface = window.userInterface = (function() {
             prefOverlay.style.fontSize = '14px';
             prefOverlay.style.padding = '5px';
             prefOverlay.style.borderRadius = '5px';
+            prefOverlay.style.visibility = 'hidden';
             prefOverlay.className = 'nsi';
-            document.body.appendChild(prefOverlay);
+            // document.body.appendChild(prefOverlay);
 
             var statsOverlay = document.createElement('div');
             statsOverlay.style.position = 'fixed';
@@ -1021,8 +1025,9 @@ var userInterface = window.userInterface = (function() {
             statsOverlay.style.fontSize = '14px';
             statsOverlay.style.padding = '5px';
             statsOverlay.style.borderRadius = '5px';
+            statsOverlay.style.visibility = 'hidden';
             statsOverlay.className = 'nsi';
-            document.body.appendChild(statsOverlay);
+            // document.body.appendChild(statsOverlay);
 
             userInterface.overlays.botOverlay = botOverlay;
             userInterface.overlays.serverOverlay = serverOverlay;
@@ -1358,6 +1363,11 @@ var userInterface = window.userInterface = (function() {
             original_oef();
             // Modified slither.io redraw function
             new_redraw();
+            // Remove leaderboard
+            window.lbh.style.display = 'none';
+            window.lbs.style.display = 'none';
+            window.lbp.style.display = 'none';
+            window.lbn.style.display = 'none';
 
             if (window.playing && bot.isBotEnabled && window.snake !== null) {
                 window.onmousemove = function() {};
@@ -1438,10 +1448,10 @@ var userInterface = window.userInterface = (function() {
 
     // Load preferences
     userInterface.loadPreference('logDebugging', false);
-    userInterface.loadPreference('visualDebugging', true);
+    userInterface.loadPreference('visualDebugging', false);
     userInterface.loadPreference('autoRespawn', true);
     userInterface.loadPreference('mobileRender', true);
-    userInterface.loadPreference('leaderboard', true);
+    userInterface.loadPreference('leaderboard', false);
     window.nick.value = userInterface.loadPreference('savedNick', 'Slither.io-bot');
 
     // Don't load saved options or apply custom options if
@@ -1497,6 +1507,9 @@ var userInterface = window.userInterface = (function() {
 
     // Remove social
     window.social.remove();
+
+    // Set background
+    canvasUtil.setBackground("https://valkjsaaa.github.io/img-res/black.jpg");
 
     // Maintain fps
     setInterval(userInterface.framesPerSecond.fpsTimer, 80);

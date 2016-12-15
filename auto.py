@@ -14,6 +14,8 @@ from keras.models import Sequential, load_model
 from keras.layers.core import Dense, Dropout, Activation
 from keras.optimizers import RMSprop
 import numpy as np
+from io import BytesIO
+from PIL import Image
 from copy import copy
 
 MAX_ENTRY = 300
@@ -31,6 +33,14 @@ CROSS_DIMENSION = 8
 BASE = 2
 BASE_MAX_POWER = 14
 BASE_MIN_POWER = 9
+
+WINDOW_HEIGHT = 400
+WINDOW_WIDTH = 400
+
+RESIZE_HEIGHT = 80
+RESIZE_WIDTH = 80
+
+CHROME_BAR_HEIGHT = 74
 
 INPUT_SIZE = DIMENSION + DIMENSION + (CROSS_DIMENSION - 1) * CROSS_DIMENSION / 2 + DIMENSION * (BASE_MAX_POWER - BASE_MIN_POWER) + 1
 
@@ -94,6 +104,10 @@ class Bot(object):
 
     def __enter__(self):
         self.driver = open_driver(platform)
+        if platform == 0:
+            self.driver.set_window_size(WINDOW_WIDTH, WINDOW_HEIGHT + CHROME_BAR_HEIGHT)
+        else:
+            self.driver.set_window_size(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.driver.get('http://www.slither.io')
         self.debug_print("webpage ready")
 
@@ -161,6 +175,10 @@ class Bot(object):
             'canvasUtil.setMouseCoordinates({"x": %f, "y": %f}); window.setAcceleration(%d);' % (x, y, if_boost))
 
     def process(self, result):
+        screen = self.driver.get_screenshot_as_png()
+        image = Image.open(BytesIO(screen))
+        image = image.resize((RESIZE_WIDTH, RESIZE_HEIGHT), Image.LANCZOS)
+        image.save("./screen.png")
         if self.just_dead != 0:
             self.just_dead -= 1
         json_result = [json.loads(message) for message in result]
